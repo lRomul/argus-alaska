@@ -21,7 +21,7 @@ class AlaskaModel(Model):
         self.optimizer.zero_grad()
         input, target = self.prepare_batch(batch, self.device)
         prediction = self.nn_module(input)
-        loss = self.loss(prediction, target, training=True)
+        loss = self.loss(prediction, target)
         if self.amp is not None:
             with self.amp.scale_loss(loss, self.optimizer) as scaled_loss:
                 scaled_loss.backward()

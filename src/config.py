@@ -11,6 +11,7 @@ sample_submission_path = data_dir / 'sample_submission.csv'
 test_dir = data_dir / 'Test'
 
 train_folds_path = data_dir / 'train_folds.csv'
+experiments_dir = data_dir / 'experiments'
 classes = ['Cover', 'JMiPOD', 'JUNIWARD', 'UERD']
 class2target = {
     'Cover': 0,
@@ -19,3 +20,4 @@ class2target = {
     'UERD': 1
 }
 n_folds = 5
+folds = list(range(n_folds))

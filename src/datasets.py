@@ -22,7 +22,7 @@ def decode_raw_image(raw_image):
     return image
 
 
-def get_folds_data():
+def get_folds_data(raw_images=False):
     train_folds_df = pd.read_csv(config.train_folds_path)
     folds_data = []
 
@@ -34,13 +34,12 @@ def get_folds_data():
         }
         for cls, trg in config.class2target.items():
             image_path = config.data_dir / cls / name
-            raw_image = read_raw_image(image_path)
             sample[cls] = {
-                'raw_image': raw_image,
-                'image_path': image_path,
+                'image_path': str(image_path),
                 'target': trg
             }
-
+            if raw_images:
+                sample[cls]['raw_image'] = read_raw_image(image_path)
         folds_data.append(sample)
 
     return folds_data
@@ -70,12 +69,16 @@ class AlaskaDataset(Dataset):
         random_class = np.random.choice(config.classes)
         sample = self.data[idx][random_class]
 
-        image = decode_raw_image(sample['raw_image'])
+        if 'raw_image' in sample:
+            image = decode_raw_image(sample['raw_image'])
+        else:
+            image = cv2.imread(sample['image_path'])
 
         if not self.target:
             return image
 
-        target = torch.tensor(sample['target'], dtype=torch.int64)
+        target = torch.tensor(sample['target'], dtype=torch.float32)
+        target = target.unsqueeze(0)
         return image, target
 
     def _set_random_seed(self, idx):
