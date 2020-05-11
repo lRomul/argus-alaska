@@ -68,9 +68,9 @@ def train_fold(save_dir, train_folds, val_folds):
                             num_workers=NUM_WORKERS * 2)
 
     callbacks = [
-        MonitorCheckpoint(save_dir, monitor='val_loss', max_saves=1),
-        ReduceLROnPlateau(monitor='val_loss', patience=6, factor=0.6, min_lr=1e-8),
-        EarlyStopping(monitor='val_loss', patience=18),
+        MonitorCheckpoint(save_dir, monitor='val_weighted_auc', max_saves=1),
+        ReduceLROnPlateau(monitor='val_weighted_auc', patience=6, factor=0.6, min_lr=1e-8),
+        EarlyStopping(monitor='val_weighted_auc', patience=18),
         LoggingToFile(save_dir / 'log.txt'),
         LoggingToCSV(save_dir / 'log.csv')
     ]
@@ -78,7 +78,8 @@ def train_fold(save_dir, train_folds, val_folds):
     model.fit(train_loader,
               val_loader=val_loader,
               max_epochs=TRAIN_EPOCHS,
-              callbacks=callbacks)
+              callbacks=callbacks,
+              metrics=['weighted_auc', 'binary_accuracy'])
 
 
 if __name__ == "__main__":
