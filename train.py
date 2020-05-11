@@ -13,7 +13,7 @@ from argus.callbacks import (
 
 from torch.utils.data import DataLoader
 
-from src.datasets import AlaskaDataset, get_folds_data
+from src.datasets import AlaskaDataset, AlaskaBatchSampler, get_folds_data
 from src.argus_models import AlaskaModel
 from src.transforms import get_transforms
 from src import config
@@ -25,8 +25,10 @@ parser.add_argument('--fold', required=False, type=int)
 args = parser.parse_args()
 
 BATCH_SIZE = 16
-TRAIN_EPOCHS = 10
-BASE_LR = 0.001
+TRAIN_EPOCH_SIZE = 12000
+VAL_EPOCH_SIZE = 3000
+TRAIN_EPOCHS = 1000
+BASE_LR = 0.0001
 NUM_WORKERS = 16
 
 
@@ -56,13 +58,14 @@ def train_fold(save_dir, train_folds, val_folds):
     test_transform = get_transforms(train=False)
 
     train_dataset = AlaskaDataset(folds_data, train_folds, transform=train_transform)
+    train_sampler = AlaskaBatchSampler(train_dataset, TRAIN_EPOCH_SIZE, BATCH_SIZE, train=True)
     val_dataset = AlaskaDataset(folds_data, val_folds, transform=test_transform)
+    val_sampler = AlaskaBatchSampler(val_dataset, VAL_EPOCH_SIZE, BATCH_SIZE, train=False)
 
-    train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE,
-                              shuffle=True, drop_last=True,
+    train_loader = DataLoader(train_dataset, batch_sampler=train_sampler,
                               num_workers=NUM_WORKERS)
-    val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE * 2,
-                            shuffle=False, num_workers=NUM_WORKERS * 2)
+    val_loader = DataLoader(val_dataset, batch_sampler=val_sampler,
+                            num_workers=NUM_WORKERS * 2)
 
     callbacks = [
         MonitorCheckpoint(save_dir, monitor='val_loss', max_saves=1),

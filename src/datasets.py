@@ -6,7 +6,7 @@ import pandas as pd
 from src import config
 
 import torch
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, BatchSampler
 
 
 def read_raw_image(path):
@@ -45,6 +45,47 @@ def get_folds_data(raw_images=False):
     return folds_data
 
 
+class AlaskaBatchSampler(BatchSampler):
+    def __init__(self, dataset, epoch_size, batch_size, train=True, drop_last=True):
+        self.dataset = dataset
+        self.epoch_size = epoch_size
+        self.batch_size = batch_size
+        self.train = train
+        self.drop_last = drop_last
+
+    def train_samples(self):
+        indexes = np.random.randint(len(self.dataset), size=self.epoch_size)
+        classes = np.random.choice(config.classes, size=self.epoch_size)
+        return zip(indexes, classes)
+
+    def val_samples(self):
+        indexes = np.arange(self.epoch_size)
+        repeat_count = (self.epoch_size // len(config.classes)) + 1
+        classes = config.classes * repeat_count
+        return zip(indexes, classes[:self.epoch_size])
+
+    def __iter__(self):
+        batch = []
+        if self.train:
+            samples = self.train_samples()
+        else:
+            samples = self.val_samples()
+
+        for sample in samples:
+            batch.append(sample)
+            if len(batch) == self.batch_size:
+                yield batch
+                batch = []
+        if len(batch) > 0 and not self.drop_last:
+            yield batch
+
+    def __len__(self):
+        if self.drop_last:
+            return len(self.epoch_size) // self.batch_size
+        else:
+            return (len(self.epoch_size) + self.batch_size - 1) // self.batch_size
+
+
 class AlaskaDataset(Dataset):
     def __init__(self,
                  data,
@@ -66,8 +107,7 @@ class AlaskaDataset(Dataset):
         return len(self.data)
 
     def get_sample(self, idx):
-        random_class = np.random.choice(config.classes)
-        sample = self.data[idx][random_class]
+        sample = self.data[idx[0]][idx[1]]
 
         if 'raw_image' in sample:
             image = decode_raw_image(sample['raw_image'])
@@ -81,15 +121,8 @@ class AlaskaDataset(Dataset):
         target = target.unsqueeze(0)
         return image, target
 
-    def _set_random_seed(self, idx):
-        seed = int(time.time() * 1000.0) + idx
-        random.seed(seed)
-        np.random.seed(seed % (2**32 - 1))
-
     @torch.no_grad()
     def __getitem__(self, idx):
-        self._set_random_seed(idx)
-
         if not self.target:
             image = self.get_sample(idx)
             if self.transform is not None:
