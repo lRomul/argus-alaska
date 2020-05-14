@@ -16,6 +16,7 @@ from torch.utils.data import DataLoader
 from src.datasets import AlaskaDataset, AlaskaBatchSampler, get_folds_data
 from src.argus_models import AlaskaModel
 from src.transforms import get_transforms
+from src.utils import initialize_amp
 from src import config
 
 
@@ -24,12 +25,14 @@ parser.add_argument('--experiment', required=True, type=str)
 parser.add_argument('--fold', required=False, type=int)
 args = parser.parse_args()
 
-BATCH_SIZE = 16
+BATCH_SIZE = 24
 TRAIN_EPOCH_SIZE = 12000
 VAL_EPOCH_SIZE = 3000
 TRAIN_EPOCHS = 1000
 BASE_LR = 0.0001
 NUM_WORKERS = 16
+USE_AMP = True
+DEVICES = ['cuda']
 
 
 def get_lr(base_lr, batch_size):
@@ -44,7 +47,7 @@ PARAMS = {
     }),
     'loss': 'BCEWithLogitsLoss',
     'optimizer': ('AdamW', {'lr': get_lr(BASE_LR, BATCH_SIZE)}),
-    'device': 'cuda',
+    'device': DEVICES[0],
 }
 
 
@@ -53,6 +56,10 @@ def train_fold(save_dir, train_folds, val_folds):
 
     model = AlaskaModel(PARAMS)
     model.params['nn_module'][1]['pretrained'] = False
+
+    if USE_AMP:
+        initialize_amp(model)
+    model.set_device(DEVICES)
 
     train_transform = get_transforms(train=True)
     test_transform = get_transforms(train=False)
