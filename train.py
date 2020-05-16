@@ -16,6 +16,7 @@ from torch.utils.data import DataLoader
 from src.datasets import AlaskaDataset, AlaskaBatchSampler, get_folds_data
 from src.argus_models import AlaskaModel
 from src.transforms import get_transforms
+from src.mixers import CutMix
 from src import config
 
 
@@ -43,7 +44,10 @@ PARAMS = {
         'num_classes': config.num_unique_targets,
         'pretrained': True,
     }),
-    'loss': 'CrossEntropyLoss',
+    'loss': ('SmoothingOhemCrossEntropy', {
+        'smooth_factor': 0.0,
+        'ohem_rate': 1.0
+    }),
     'optimizer': ('AdamW', {'lr': get_lr(BASE_LR, BATCH_SIZE)}),
     'prediction_transform': ('Softmax', {'dim': 1}),
     'device': 'cuda',
@@ -59,7 +63,8 @@ def train_fold(save_dir, train_folds, val_folds):
     train_transform = get_transforms(train=True)
     test_transform = get_transforms(train=False)
 
-    train_dataset = AlaskaDataset(folds_data, train_folds, transform=train_transform)
+    mixer = CutMix(beta=1.0)
+    train_dataset = AlaskaDataset(folds_data, train_folds, transform=train_transform, mixer=mixer)
     train_sampler = AlaskaBatchSampler(train_dataset, TRAIN_EPOCH_SIZE, BATCH_SIZE, train=True)
     val_dataset = AlaskaDataset(folds_data, val_folds, transform=test_transform)
     val_sampler = AlaskaBatchSampler(val_dataset, VAL_EPOCH_SIZE, BATCH_SIZE, train=False)

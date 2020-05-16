@@ -4,11 +4,15 @@ from argus import Model
 from argus.utils import deep_detach
 
 from src.models.custom_efficient import CustomEfficient
+from src.losses import SmoothingOhemCrossEntropy
 
 
 class AlaskaModel(Model):
     nn_module = {
         'CustomEfficient': CustomEfficient,
+    }
+    loss = {
+        'SmoothingOhemCrossEntropy': SmoothingOhemCrossEntropy,
     }
     prediction_transform = {
         'Softmax': torch.nn.Softmax
