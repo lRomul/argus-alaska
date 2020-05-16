@@ -1,9 +1,11 @@
 import torch
 import numpy as np
-
 from sklearn import metrics
 
 from argus.metrics.metric import Metric
+
+from src.utils import target2altered
+from src import config
 
 
 def alaska_weighted_auc(y_true, y_pred):
@@ -36,24 +38,23 @@ def alaska_weighted_auc(y_true, y_pred):
     return competition_metric / normalization
 
 
-class BinaryAccuracy(Metric):
-    name = 'binary_accuracy'
+class AlteredAccuracy(Metric):
+    name = 'altered_accuracy'
     better = 'max'
-
-    def __init__(self, threshold=0.5):
-        self.threshold = threshold
-        self.correct = 0
-        self.count = 0
 
     def reset(self):
         self.correct = 0
         self.count = 0
 
+    @torch.no_grad()
     def update(self, step_output: dict):
         pred = step_output['prediction']
         trg = step_output['target']
-        pred = (pred > self.threshold).to(torch.float32)
-        correct = torch.eq(pred, trg).all(dim=1).view(-1)
+
+        pred = target2altered(pred)
+
+        correct = torch.eq(pred > 0.5, trg != config.unaltered_target)
+        correct = correct.view(-1)
         self.correct += torch.sum(correct).item()
         self.count += correct.shape[0]
 
@@ -75,9 +76,15 @@ class WeightedAuc(Metric):
         self.predictions = []
         self.targets = []
 
+    @torch.no_grad()
     def update(self, step_output: dict):
         pred = step_output['prediction']
         target = step_output['target']
+
+        pred = target2altered(pred)
+        target = target != config.unaltered_target
+        target = target.to(torch.float32)
+
         pred = pred.cpu().numpy()
         target = target.cpu().numpy()
 

@@ -1,1 +1,1 @@
-from src.metrics import BinaryAccuracy, WeightedAuc
+from src.metrics import WeightedAuc, AlteredAccuracy

@@ -17,12 +17,13 @@ ENCODERS = {
 class CustomEfficient(nn.Module):
     def __init__(self,
                  encoder="tf_efficientnet_b0_ns",
+                 num_classes=1,
                  pretrained=True):
         super().__init__()
 
         efficient, num_bottleneck_filters = ENCODERS[encoder]
         self.efficient = efficient(pretrained=pretrained)
-        self.efficient.classifier = nn.Linear(num_bottleneck_filters, 1)
+        self.efficient.classifier = nn.Linear(num_bottleneck_filters, num_classes)
 
     def forward(self, x):
         return self.efficient(x)

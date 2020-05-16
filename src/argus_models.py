@@ -10,6 +10,9 @@ class AlaskaModel(Model):
     nn_module = {
         'CustomEfficient': CustomEfficient,
     }
+    prediction_transform = {
+        'Softmax': torch.nn.Softmax
+    }
 
     def __init__(self, params):
         super().__init__(params)

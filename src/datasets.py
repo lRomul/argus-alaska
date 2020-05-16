@@ -1,6 +1,4 @@
 import cv2
-import time
-import random
 import numpy as np
 import pandas as pd
 from src import config
@@ -117,8 +115,7 @@ class AlaskaDataset(Dataset):
         if not self.target:
             return image
 
-        target = torch.tensor(sample['target'], dtype=torch.float32)
-        target = target.unsqueeze(0)
+        target = torch.tensor(sample['target'], dtype=torch.int64)
         return image, target
 
     @torch.no_grad()
