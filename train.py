@@ -6,7 +6,7 @@ from subprocess import Popen
 from argus.callbacks import (
     LoggingToFile,
     MonitorCheckpoint,
-    ReduceLROnPlateau,
+    CosineAnnealingLR,
     EarlyStopping,
     LoggingToCSV
 )
@@ -27,8 +27,8 @@ args = parser.parse_args()
 BATCH_SIZE = 16
 TRAIN_EPOCH_SIZE = 12000
 VAL_EPOCH_SIZE = 3000
-TRAIN_EPOCHS = 1000
-BASE_LR = 0.0001
+TRAIN_EPOCHS = 150
+BASE_LR = 1e-4
 NUM_WORKERS = 16
 
 
@@ -71,7 +71,7 @@ def train_fold(save_dir, train_folds, val_folds):
 
     callbacks = [
         MonitorCheckpoint(save_dir, monitor='val_weighted_auc', max_saves=1),
-        ReduceLROnPlateau(monitor='val_weighted_auc', patience=6, factor=0.6, min_lr=1e-8),
+        CosineAnnealingLR(T_max=TRAIN_EPOCHS, eta_min=1e-6),
         EarlyStopping(monitor='val_weighted_auc', patience=18),
         LoggingToFile(save_dir / 'log.txt'),
         LoggingToCSV(save_dir / 'log.csv')
