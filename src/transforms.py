@@ -2,6 +2,8 @@ import torch
 import random
 import numpy as np
 
+import albumentations as alb
+
 
 class Compose:
     def __init__(self, transforms):
@@ -57,9 +59,24 @@ class ImageToTensor:
         return image
 
 
+class Albumentations:
+    def __init__(self, p=1.0):
+        self.augmentation = alb.Compose([
+                    alb.VerticalFlip(p=0.5),
+                    alb.HorizontalFlip(p=0.5),
+                    alb.RandomRotate90(p=0.5)
+                ], p=p)
+
+    def __call__(self, image):
+        augmented = self.augmentation(image=image)
+        image = augmented["image"]
+        return image
+
+
 def get_transforms(train):
     if train:
         transforms = Compose([
+            Albumentations(),
             ImageToTensor()
         ])
     else:
