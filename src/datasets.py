@@ -1,4 +1,5 @@
 import cv2
+import json
 import numpy as np
 import pandas as pd
 from src import config
@@ -20,16 +21,21 @@ def decode_raw_image(raw_image):
     return image
 
 
-def get_folds_data(raw_images=False):
+def get_folds_data(raw_images=False, quality=True):
     train_folds_df = pd.read_csv(config.train_folds_path)
+    if quality:
+        with open(config.quality_json_path) as file:
+            quality_dict = json.load(file)
     folds_data = []
 
     for name, fold in zip(train_folds_df.name, train_folds_df.fold):
         sample = {
             'name': name,
             'fold': fold,
-
         }
+        if quality:
+            sample['quality'] = quality_dict[name]
+
         for cls, trg in config.class2target.items():
             image_path = config.data_dir / cls / name
             sample[cls] = {
@@ -105,7 +111,8 @@ class AlaskaDataset(Dataset):
         return len(self.data)
 
     def get_sample(self, idx):
-        sample = self.data[idx[0]][idx[1]]
+        name_sample = self.data[idx[0]]
+        sample = name_sample[idx[1]]
 
         if 'raw_image' in sample:
             image = decode_raw_image(sample['raw_image'])
@@ -115,7 +122,10 @@ class AlaskaDataset(Dataset):
         if not self.target:
             return image
 
-        target = torch.tensor(sample['target'], dtype=torch.int64)
+        altered_target = torch.tensor(sample['target'], dtype=torch.int64)
+        quality_target = config.quality2target[name_sample['quality']]
+        quality_target = torch.tensor(quality_target, dtype=torch.int64)
+        target = altered_target, quality_target
         return image, target
 
     @torch.no_grad()

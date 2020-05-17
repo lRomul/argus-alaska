@@ -3,6 +3,8 @@ from functools import partial
 import torch.nn as nn
 from timm import create_model
 
+from src.models.classifiers import Classifier
+
 
 ENCODERS = {
     "efficientnet_b0": (partial(create_model, 'efficientnet_b0'), 1280),
@@ -17,13 +19,12 @@ ENCODERS = {
 class CustomEfficient(nn.Module):
     def __init__(self,
                  encoder="tf_efficientnet_b0_ns",
-                 num_classes=1,
                  pretrained=True):
         super().__init__()
 
         efficient, num_bottleneck_filters = ENCODERS[encoder]
         self.efficient = efficient(pretrained=pretrained)
-        self.efficient.classifier = nn.Linear(num_bottleneck_filters, num_classes)
+        self.efficient.classifier = Classifier(num_bottleneck_filters)
 
     def forward(self, x):
         return self.efficient(x)

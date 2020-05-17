@@ -1,4 +1,5 @@
 import torch
+import jpegio
 
 from src import config
 
@@ -21,3 +22,16 @@ def initialize_amp(model,
         loss_scale=loss_scale
     )
     model.amp = amp
+
+
+def get_image_quality(image_path):
+    jpeg = jpegio.read(str(image_path))
+    first_element = jpeg.quant_tables[0][0, 0]
+    if first_element == 2:
+        return 95
+    elif first_element == 3:
+        return 90
+    elif first_element == 8:
+        return 75
+    else:
+        raise Exception(f"Unknown image quality, quant tables: {jpeg.quant_tables}")

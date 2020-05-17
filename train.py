@@ -42,12 +42,15 @@ SAVE_DIR = config.experiments_dir / args.experiment
 PARAMS = {
     'nn_module': ('CustomEfficient', {
         'encoder': 'tf_efficientnet_b0_ns',
-        'num_classes': config.num_unique_targets,
         'pretrained': True,
     }),
-    'loss': 'CrossEntropyLoss',
+    'loss': ('AlaskaCrossEntropy', {
+        'altered_weight': 1.0,
+        'quality_weight': 1.0,
+        'smooth_factor': 0,
+        'ohem_rate': 1.0
+    }),
     'optimizer': ('AdamW', {'lr': get_lr(BASE_LR, BATCH_SIZE)}),
-    'prediction_transform': ('Softmax', {'dim': 1}),
     'device': DEVICES[0],
 }
 
@@ -81,7 +84,7 @@ def train_fold(save_dir, train_folds, val_folds):
         LoggingToFile(save_dir / 'log.txt'),
         LoggingToCSV(save_dir / 'log.csv')
     ]
-    metrics = ['weighted_auc', 'altered_accuracy', 'accuracy']
+    metrics = ['weighted_auc', 'altered_accuracy', 'quality_accuracy']
 
     model.fit(train_loader,
               val_loader=val_loader,

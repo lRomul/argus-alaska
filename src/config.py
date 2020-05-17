@@ -12,6 +12,7 @@ test_dir = data_dir / 'Test'
 
 train_folds_path = data_dir / 'train_folds.csv'
 experiments_dir = data_dir / 'experiments'
+quality_json_path = data_dir / 'quality.json'
 classes = ['Cover', 'JMiPOD', 'JUNIWARD', 'UERD']
 unaltered_target = 0
 class2target = {
@@ -20,6 +21,9 @@ class2target = {
     'JUNIWARD': 2,
     'UERD': 3
 }
+qualities = [75, 90, 95]
+quality2target = {q: t for t, q in enumerate(qualities)}
+num_qualities = len(qualities)
 class2altered = {cls: int(trg != unaltered_target)
                  for cls, trg in class2target.items()}
 altered_classes = [cls for cls, alt in class2altered.items() if alt]

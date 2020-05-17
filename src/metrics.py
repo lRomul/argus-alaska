@@ -48,13 +48,33 @@ class AlteredAccuracy(Metric):
 
     @torch.no_grad()
     def update(self, step_output: dict):
-        pred = step_output['prediction']
-        trg = step_output['target']
+        pred = step_output['prediction'][0]
+        trg = step_output['target'][0]
+        indices = torch.max(pred, dim=1)[1]
+        correct = torch.eq(indices, trg).view(-1)
+        self.correct += torch.sum(correct).item()
+        self.count += correct.shape[0]
 
-        pred = target2altered(pred)
+    def compute(self):
+        if self.count == 0:
+            raise Exception('Must be at least one example for computation')
+        return self.correct / self.count
 
-        correct = torch.eq(pred > 0.5, trg != config.unaltered_target)
-        correct = correct.view(-1)
+
+class QualityAccuracy(Metric):
+    name = 'quality_accuracy'
+    better = 'max'
+
+    def reset(self):
+        self.correct = 0
+        self.count = 0
+
+    @torch.no_grad()
+    def update(self, step_output: dict):
+        pred = step_output['prediction'][1]
+        trg = step_output['target'][1]
+        indices = torch.max(pred, dim=1)[1]
+        correct = torch.eq(indices, trg).view(-1)
         self.correct += torch.sum(correct).item()
         self.count += correct.shape[0]
 
@@ -78,8 +98,8 @@ class WeightedAuc(Metric):
 
     @torch.no_grad()
     def update(self, step_output: dict):
-        pred = step_output['prediction']
-        target = step_output['target']
+        pred = step_output['prediction'][0]
+        target = step_output['target'][0]
 
         pred = target2altered(pred)
         target = target != config.unaltered_target

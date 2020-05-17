@@ -38,7 +38,15 @@ RUN pip3 install --no-cache-dir \
     pytorch-argus==0.0.9 \
     albumentations==0.4.5
 
-RUN pip install timm==0.1.26
+RUN pip install --no-cache-dir \
+    timm==0.1.26 \
+    Cython==0.29.17
+
+RUN git clone --depth 1 -b master https://github.com/dwgoon/jpegio &&\
+    cd jpegio &&\
+    git checkout fe577469cc332c14f8647167ca8ca2b573f5071b &&\
+    python setup.py install &&\
+    cd .. && rm -rf jpegio
 
 ENV PYTHONPATH $PYTHONPATH:/workdir
 ENV TORCH_HOME=/workdir/data/.torch
