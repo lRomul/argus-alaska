@@ -7,7 +7,6 @@ from argus.callbacks import (
     LoggingToFile,
     MonitorCheckpoint,
     CosineAnnealingLR,
-    EarlyStopping,
     LoggingToCSV
 )
 
@@ -25,7 +24,7 @@ parser.add_argument('--experiment', required=True, type=str)
 parser.add_argument('--fold', required=False, type=int)
 args = parser.parse_args()
 
-BATCH_SIZE = 24
+BATCH_SIZE = 32
 TRAIN_EPOCH_SIZE = 12000
 VAL_EPOCH_SIZE = 3000
 TRAIN_EPOCHS = 150
@@ -79,7 +78,6 @@ def train_fold(save_dir, train_folds, val_folds):
     callbacks = [
         MonitorCheckpoint(save_dir, monitor='val_weighted_auc', max_saves=1),
         CosineAnnealingLR(T_max=TRAIN_EPOCHS, eta_min=1e-6),
-        EarlyStopping(monitor='val_weighted_auc', patience=18),
         LoggingToFile(save_dir / 'log.txt'),
         LoggingToCSV(save_dir / 'log.csv')
     ]
