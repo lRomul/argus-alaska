@@ -47,7 +47,7 @@ PARAMS = {
     'loss': ('AlaskaCrossEntropy', {
         'altered_weight': 1.0,
         'quality_weight': 1.0,
-        'smooth_factor': 0,
+        'smooth_factor': 0.1,
         'ohem_rate': 1.0
     }),
     'optimizer': ('AdamW', {'lr': get_lr(BASE_LR, BATCH_SIZE)}),
