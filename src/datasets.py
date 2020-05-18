@@ -122,10 +122,10 @@ class AlaskaDataset(Dataset):
         if not self.target:
             return image
 
-        altered_target = torch.tensor(sample['target'], dtype=torch.int64)
+        stegano_target = torch.tensor(sample['target'], dtype=torch.int64)
         quality_target = config.quality2target[name_sample['quality']]
         quality_target = torch.tensor(quality_target, dtype=torch.int64)
-        target = altered_target, quality_target
+        target = stegano_target, quality_target
         return image, target
 
     @torch.no_grad()

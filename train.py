@@ -14,6 +14,7 @@ from torch.utils.data import DataLoader
 
 from src.datasets import AlaskaDataset, AlaskaBatchSampler, get_folds_data
 from src.argus_models import AlaskaModel
+from src.metrics import Accuracy
 from src.transforms import get_transforms
 from src.utils import initialize_amp
 from src import config
@@ -45,7 +46,7 @@ PARAMS = {
         'pretrained': True,
     }),
     'loss': ('AlaskaCrossEntropy', {
-        'altered_weight': 1.0,
+        'stegano_weight': 1.0,
         'quality_weight': 1.0,
         'smooth_factor': 0.1,
         'ohem_rate': 1.0
@@ -84,7 +85,7 @@ def train_fold(save_dir, train_folds, val_folds):
         LoggingToFile(save_dir / 'log.txt'),
         LoggingToCSV(save_dir / 'log.csv')
     ]
-    metrics = ['weighted_auc', 'altered_accuracy', 'quality_accuracy']
+    metrics = ['weighted_auc', Accuracy('stegano'), Accuracy('quality')]
 
     model.fit(train_loader,
               val_loader=val_loader,

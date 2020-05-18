@@ -38,9 +38,19 @@ def alaska_weighted_auc(y_true, y_pred):
     return competition_metric / normalization
 
 
-class AlteredAccuracy(Metric):
-    name = 'altered_accuracy'
+class Accuracy(Metric):
+    name = '_accuracy'
     better = 'max'
+    name2index = {
+        'stegano': 0,
+        'quality': 1
+    }
+
+    def __init__(self, name):
+        self.name = name + self.name
+        self.index = self.name2index[name]
+        self.correct = 0
+        self.count = 0
 
     def reset(self):
         self.correct = 0
@@ -48,31 +58,8 @@ class AlteredAccuracy(Metric):
 
     @torch.no_grad()
     def update(self, step_output: dict):
-        pred = step_output['prediction'][0]
-        trg = step_output['target'][0]
-        indices = torch.max(pred, dim=1)[1]
-        correct = torch.eq(indices, trg).view(-1)
-        self.correct += torch.sum(correct).item()
-        self.count += correct.shape[0]
-
-    def compute(self):
-        if self.count == 0:
-            raise Exception('Must be at least one example for computation')
-        return self.correct / self.count
-
-
-class QualityAccuracy(Metric):
-    name = 'quality_accuracy'
-    better = 'max'
-
-    def reset(self):
-        self.correct = 0
-        self.count = 0
-
-    @torch.no_grad()
-    def update(self, step_output: dict):
-        pred = step_output['prediction'][1]
-        trg = step_output['target'][1]
+        pred = step_output['prediction'][self.index]
+        trg = step_output['target'][self.index]
         indices = torch.max(pred, dim=1)[1]
         correct = torch.eq(indices, trg).view(-1)
         self.correct += torch.sum(correct).item()

@@ -53,30 +53,30 @@ class SmoothingOhemCrossEntropy(nn.Module):
 
 class AlaskaCrossEntropy(nn.Module):
     def __init__(self,
-                 altered_weight=1.0,
+                 stegano_weight=1.0,
                  quality_weight=1.0,
                  smooth_factor=0,
                  ohem_rate=1.0):
         super().__init__()
 
-        self.altered_weight = altered_weight
+        self.stegano_weight = stegano_weight
         self.quality_weight = quality_weight
         self.smooth_factor = smooth_factor
         self.ohem_rate = ohem_rate
 
         loss = SmoothingOhemCrossEntropy(smooth_factor=smooth_factor,
                                          ohem_rate=ohem_rate)
-        self.altered_ce = loss
+        self.stegano_ce = loss
         self.quality_ce = loss
 
     def __call__(self, pred, target, training=False):
-        altered_pred, quality_pred = pred
-        altered_target, quality_target = target
+        stegano_pred, quality_pred = pred
+        stegano_target, quality_target = target
 
         loss = 0
-        if self.altered_weight:
-            loss += self.altered_weight \
-                    * self.altered_ce(altered_pred, altered_target,
+        if self.stegano_weight:
+            loss += self.stegano_weight \
+                    * self.stegano_ce(stegano_pred, stegano_target,
                                       training=training)
 
         if self.quality_weight:
