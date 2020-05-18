@@ -49,7 +49,7 @@ PARAMS = {
         'stegano_weight': 1.0,
         'quality_weight': 1.0,
         'smooth_factor': 0.1,
-        'ohem_rate': 1.0
+        'ohem_rate': 0.8
     }),
     'optimizer': ('AdamW', {'lr': get_lr(BASE_LR, BATCH_SIZE)}),
     'device': DEVICES[0],
