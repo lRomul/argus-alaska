@@ -76,7 +76,7 @@ class Albumentations:
 def get_transforms(train):
     if train:
         transforms = Compose([
-            Albumentations(),
+            # Albumentations(),
             ImageToTensor()
         ])
     else:

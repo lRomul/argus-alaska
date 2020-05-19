@@ -43,6 +43,7 @@ SAVE_DIR = config.experiments_dir / args.experiment
 PARAMS = {
     'nn_module': ('CustomEfficient', {
         'encoder': 'tf_efficientnet_b0_ns',
+        'in_channels': 6,
         'pretrained': True,
     }),
     'loss': ('AlaskaCrossEntropy', {
@@ -77,7 +78,7 @@ def train_fold(save_dir, train_folds, val_folds):
     train_loader = DataLoader(train_dataset, batch_sampler=train_sampler,
                               num_workers=NUM_WORKERS)
     val_loader = DataLoader(val_dataset, batch_sampler=val_sampler,
-                            num_workers=NUM_WORKERS * 2)
+                            num_workers=NUM_WORKERS)
 
     callbacks = [
         MonitorCheckpoint(save_dir, monitor='val_weighted_auc', max_saves=1),

@@ -1,5 +1,6 @@
 import cv2
 import json
+import jpegio
 import numpy as np
 import pandas as pd
 from src import config
@@ -21,7 +22,7 @@ def decode_raw_image(raw_image):
     return image
 
 
-def get_folds_data(raw_images=False, quality=True):
+def get_folds_data(quality=True):
     train_folds_df = pd.read_csv(config.train_folds_path)
     if quality:
         with open(config.quality_json_path) as file:
@@ -42,8 +43,6 @@ def get_folds_data(raw_images=False, quality=True):
                 'image_path': str(image_path),
                 'target': trg
             }
-            if raw_images:
-                sample[cls]['raw_image'] = read_raw_image(image_path)
         folds_data.append(sample)
 
     return folds_data
@@ -114,10 +113,10 @@ class AlaskaDataset(Dataset):
         name_sample = self.data[idx[0]]
         sample = name_sample[idx[1]]
 
-        if 'raw_image' in sample:
-            image = decode_raw_image(sample['raw_image'])
-        else:
-            image = cv2.imread(sample['image_path'])
+        image = cv2.imread(sample['image_path'])
+        jpeg = jpegio.read(sample['image_path'])
+        dct = np.stack(jpeg.coef_arrays, axis=2)
+        image = np.concatenate([image, dct], axis=2)
 
         if not self.target:
             return image
