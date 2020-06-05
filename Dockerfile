@@ -35,12 +35,13 @@ RUN pip3 install --no-cache-dir \
     notebook==6.0.3 \
     scikit-learn==0.22.2.post1 \
     scikit-image==0.16.2 \
-    pytorch-argus==0.0.9 \
     albumentations==0.4.5
 
 RUN pip install --no-cache-dir \
     timm==0.1.26 \
     Cython==0.29.17
+
+RUN pip install -U git+https://github.com/lRomul/argus.git@custom_build
 
 RUN git clone --depth 1 -b master https://github.com/dwgoon/jpegio &&\
     cd jpegio &&\
