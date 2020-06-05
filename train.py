@@ -25,7 +25,7 @@ parser.add_argument('--experiment', required=True, type=str)
 parser.add_argument('--fold', required=False, type=int)
 args = parser.parse_args()
 
-BATCH_SIZE = 28
+BATCH_SIZE = 32
 TRAIN_EPOCH_SIZE = 12000
 VAL_EPOCH_SIZE = 3000
 TRAIN_EPOCHS = 150
@@ -41,8 +41,8 @@ def get_lr(base_lr, batch_size):
 
 SAVE_DIR = config.experiments_dir / args.experiment
 PARAMS = {
-    'nn_module': ('CustomEfficient', {
-        'encoder': 'tf_efficientnet_b2_ns',
+    'nn_module': ('CustomResnet', {
+        'encoder': 'gluon_resnet50_v1d',
         'pretrained': True,
     }),
     'loss': ('AlaskaCrossEntropy', {
