@@ -25,7 +25,7 @@ parser.add_argument('--experiment', required=True, type=str)
 parser.add_argument('--fold', required=False, type=int)
 args = parser.parse_args()
 
-BATCH_SIZE = 32
+BATCH_SIZE = 28
 TRAIN_EPOCH_SIZE = 12000
 VAL_EPOCH_SIZE = 3000
 TRAIN_EPOCHS = 150
@@ -42,14 +42,14 @@ def get_lr(base_lr, batch_size):
 SAVE_DIR = config.experiments_dir / args.experiment
 PARAMS = {
     'nn_module': ('CustomEfficient', {
-        'encoder': 'tf_efficientnet_b0_ns',
+        'encoder': 'tf_efficientnet_b2_ns',
         'pretrained': True,
     }),
     'loss': ('AlaskaCrossEntropy', {
         'stegano_weight': 1.0,
         'quality_weight': 1.0,
         'smooth_factor': 0.1,
-        'ohem_rate': 0.8
+        'ohem_rate': 1.0
     }),
     'optimizer': ('AdamW', {'lr': get_lr(BASE_LR, BATCH_SIZE)}),
     'device': DEVICES[0],

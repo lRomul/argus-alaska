@@ -10,6 +10,7 @@ ENCODERS = {
     "efficientnet_b0": (partial(create_model, 'efficientnet_b0'), 1280),
     "tf_efficientnet_b1": (partial(create_model, 'tf_efficientnet_b1'), 1280),
     "tf_efficientnet_b0_ns": (partial(create_model, 'tf_efficientnet_b0_ns'), 1280),
+    "tf_efficientnet_b2_ns": (partial(create_model, 'tf_efficientnet_b2_ns'), 1408),
     "tf_efficientnet_b3_ns": (partial(create_model, 'tf_efficientnet_b3_ns'), 1536),
     "tf_efficientnet_b4_ns": (partial(create_model, 'tf_efficientnet_b4_ns'), 1792),
     "tf_efficientnet_b5_ns": (partial(create_model, 'tf_efficientnet_b5_ns'), 2048),
