@@ -25,12 +25,12 @@ parser.add_argument('--experiment', required=True, type=str)
 parser.add_argument('--fold', required=False, type=int)
 args = parser.parse_args()
 
-BATCH_SIZE = 96
-TRAIN_EPOCHS = 40
+BATCH_SIZE = 140
+TRAIN_EPOCHS = 120
 BASE_LR = 1e-4
-NUM_WORKERS = 16
+NUM_WORKERS = 8
 USE_AMP = True
-DEVICES = ['cuda:0', 'cuda:1', 'cuda:2']
+DEVICES = ['cuda:0', 'cuda:1', 'cuda:2', 'cuda:3']
 
 
 def get_lr(base_lr, batch_size):
