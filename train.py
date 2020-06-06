@@ -25,12 +25,12 @@ parser.add_argument('--experiment', required=True, type=str)
 parser.add_argument('--fold', required=False, type=int)
 args = parser.parse_args()
 
-BATCH_SIZE = 140
-TRAIN_EPOCHS = 120
+BATCH_SIZE = 66
+TRAIN_EPOCHS = 160
 BASE_LR = 5e-5
 NUM_WORKERS = 4
 USE_AMP = True
-DEVICES = ['cuda:0', 'cuda:1', 'cuda:2', 'cuda:3']
+DEVICES = ['cuda:0', 'cuda:1', 'cuda:2']
 
 
 def get_lr(base_lr, batch_size):
@@ -49,7 +49,7 @@ PARAMS = {
         'smooth_factor': 0.1,
         'ohem_rate': 1.0
     }),
-    'optimizer': ('AdamW', {'lr': get_lr(BASE_LR, BATCH_SIZE)}),
+    'optimizer': ('Adam', {'lr': get_lr(BASE_LR, BATCH_SIZE)}),
     'device': DEVICES[0],
 }
 
@@ -79,7 +79,7 @@ def train_fold(save_dir, train_folds, val_folds):
 
     callbacks = [
         MonitorCheckpoint(save_dir, monitor='val_weighted_auc', max_saves=1),
-        CosineAnnealingLR(T_max=TRAIN_EPOCHS, eta_min=1e-6),
+        CosineAnnealingLR(T_max=TRAIN_EPOCHS, eta_min=1e-7),
         LoggingToFile(save_dir / 'log.txt'),
         LoggingToCSV(save_dir / 'log.csv')
     ]
