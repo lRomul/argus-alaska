@@ -28,7 +28,7 @@ args = parser.parse_args()
 BATCH_SIZE = 140
 TRAIN_EPOCHS = 120
 BASE_LR = 5e-5
-NUM_WORKERS = 8
+NUM_WORKERS = 4
 USE_AMP = True
 DEVICES = ['cuda:0', 'cuda:1', 'cuda:2', 'cuda:3']
 
@@ -39,7 +39,7 @@ def get_lr(base_lr, batch_size):
 
 SAVE_DIR = config.experiments_dir / args.experiment
 PARAMS = {
-    'nn_module': ('CustomResnet', {
+    'nn_module': ('TimmModel', {
         'encoder': 'gluon_resnet50_v1d',
         'pretrained': True,
     }),

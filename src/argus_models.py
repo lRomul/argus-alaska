@@ -3,8 +3,7 @@ import torch
 from argus import Model
 from argus.utils import deep_detach
 
-from src.models.custom_efficient import CustomEfficient
-from src.models.custom_resnet import CustomResnet
+from src.models import CustomEfficient, CustomResnet, TimmModel
 from src.losses import AlaskaCrossEntropy
 
 
@@ -15,7 +14,8 @@ def get_prediction_transform():
 class AlaskaModel(Model):
     nn_module = {
         'CustomEfficient': CustomEfficient,
-        'CustomResnet': CustomResnet
+        'CustomResnet': CustomResnet,
+        'TimmModel': TimmModel,
     }
     loss = {
         'AlaskaCrossEntropy': AlaskaCrossEntropy
