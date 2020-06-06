@@ -27,7 +27,7 @@ args = parser.parse_args()
 
 BATCH_SIZE = 140
 TRAIN_EPOCHS = 120
-BASE_LR = 1e-4
+BASE_LR = 5e-5
 NUM_WORKERS = 8
 USE_AMP = True
 DEVICES = ['cuda:0', 'cuda:1', 'cuda:2', 'cuda:3']

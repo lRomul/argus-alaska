@@ -7,7 +7,7 @@ else
 	GPUS_OPTION=--gpus=$(GPUS)
 endif
 
-.PHONY: all build stop run
+.PHONY: all build stop run attach
 
 all: stop build run
 
@@ -19,7 +19,7 @@ stop:
 	-docker rm $(NAME)
 
 run:
-	docker run --rm -it \
+	docker run --rm -dit \
 		$(GPUS_OPTION) \
 		--net=host \
 		--ipc=host \
@@ -27,3 +27,13 @@ run:
 		--name=$(NAME) \
 		$(NAME) \
 		bash
+	docker attach $(NAME)
+
+attach:
+	docker attach $(NAME)
+
+logs:
+	docker logs -f $(NAME)
+
+exec:
+	docker exec -it $(NAME) bash
