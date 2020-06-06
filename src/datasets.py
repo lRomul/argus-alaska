@@ -50,10 +50,13 @@ def get_folds_data(raw_images=False, quality=True):
 
 
 class AlaskaBatchSampler(BatchSampler):
-    def __init__(self, dataset, epoch_size, batch_size, train=True, drop_last=True):
+    def __init__(self, dataset, batch_size, epoch_size=None, train=True, drop_last=True):
         self.dataset = dataset
-        self.epoch_size = epoch_size
         self.batch_size = batch_size
+        if epoch_size is None:
+            self.epoch_size = len(dataset)
+        else:
+            self.epoch_size = epoch_size
         self.train = train
         self.drop_last = drop_last
 

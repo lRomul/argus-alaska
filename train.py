@@ -25,14 +25,12 @@ parser.add_argument('--experiment', required=True, type=str)
 parser.add_argument('--fold', required=False, type=int)
 args = parser.parse_args()
 
-BATCH_SIZE = 32
-TRAIN_EPOCH_SIZE = 12000
-VAL_EPOCH_SIZE = 3000
-TRAIN_EPOCHS = 150
+BATCH_SIZE = 96
+TRAIN_EPOCHS = 40
 BASE_LR = 1e-4
 NUM_WORKERS = 16
 USE_AMP = True
-DEVICES = ['cuda']
+DEVICES = ['cuda:0', 'cuda:1', 'cuda:2']
 
 
 def get_lr(base_lr, batch_size):
@@ -70,9 +68,9 @@ def train_fold(save_dir, train_folds, val_folds):
     test_transform = get_transforms(train=False)
 
     train_dataset = AlaskaDataset(folds_data, train_folds, transform=train_transform)
-    train_sampler = AlaskaBatchSampler(train_dataset, TRAIN_EPOCH_SIZE, BATCH_SIZE, train=True)
+    train_sampler = AlaskaBatchSampler(train_dataset, BATCH_SIZE, train=True)
     val_dataset = AlaskaDataset(folds_data, val_folds, transform=test_transform)
-    val_sampler = AlaskaBatchSampler(val_dataset, VAL_EPOCH_SIZE, BATCH_SIZE * 2, train=False)
+    val_sampler = AlaskaBatchSampler(val_dataset, BATCH_SIZE * 2, train=False)
 
     train_loader = DataLoader(train_dataset, batch_sampler=train_sampler,
                               num_workers=NUM_WORKERS)
