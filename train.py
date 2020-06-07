@@ -26,7 +26,7 @@ parser.add_argument('--fold', required=False, type=int)
 args = parser.parse_args()
 
 BATCH_SIZE = 140
-TRAIN_EPOCHS = 160
+TRAIN_EPOCHS = 120
 BASE_LR = 1e-4
 NUM_WORKERS = 4
 USE_AMP = True
@@ -34,7 +34,7 @@ DEVICES = ['cuda:0', 'cuda:1', 'cuda:2', 'cuda:3']
 
 
 def get_lr(base_lr, batch_size):
-    return base_lr * (batch_size / 64)
+    return base_lr * (batch_size / 16)
 
 
 SAVE_DIR = config.experiments_dir / args.experiment
@@ -79,7 +79,7 @@ def train_fold(save_dir, train_folds, val_folds):
 
     callbacks = [
         MonitorCheckpoint(save_dir, monitor='val_weighted_auc', max_saves=1),
-        CosineAnnealingLR(T_max=TRAIN_EPOCHS, eta_min=1e-6),
+        CosineAnnealingLR(T_max=TRAIN_EPOCHS, eta_min=get_lr(1e-6, BATCH_SIZE)),
         LoggingToFile(save_dir / 'log.txt'),
         LoggingToCSV(save_dir / 'log.csv')
     ]
