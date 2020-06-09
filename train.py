@@ -16,18 +16,19 @@ from src.datasets import AlaskaDataset, AlaskaBatchSampler, get_folds_data
 from src.argus_models import AlaskaModel
 from src.metrics import Accuracy
 from src.transforms import get_transforms
-from src.utils import initialize_amp
+from src.utils import initialize_amp, get_best_model_path, load_pretrain_weigths
 from src import config
 
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--experiment', required=True, type=str)
 parser.add_argument('--fold', required=False, type=int)
+parser.add_argument('--pretrain', default='', type=str)
 args = parser.parse_args()
 
 BATCH_SIZE = 140
 TRAIN_EPOCHS = 120
-BASE_LR = 1e-4
+BASE_LR = 2e-5
 NUM_WORKERS = 4
 USE_AMP = True
 DEVICES = ['cuda:0', 'cuda:1', 'cuda:2', 'cuda:3']
@@ -37,7 +38,6 @@ def get_lr(base_lr, batch_size):
     return base_lr * (batch_size / 16)
 
 
-SAVE_DIR = config.experiments_dir / args.experiment
 PARAMS = {
     'nn_module': ('TimmModel', {
         'encoder': 'gluon_resnet50_v1d',
@@ -54,11 +54,19 @@ PARAMS = {
 }
 
 
-def train_fold(save_dir, train_folds, val_folds):
+def train_fold(save_dir, train_folds, val_folds, pretrain_dir=''):
     folds_data = get_folds_data()
 
     model = AlaskaModel(PARAMS)
     model.params['nn_module'][1]['pretrained'] = False
+
+    if pretrain_dir:
+        pretrain_path = get_best_model_path(pretrain_dir)
+        if pretrain_path is not None:
+            print(f'Pretrain model path {pretrain_path}')
+            load_pretrain_weigths(model, pretrain_path)
+        else:
+            print(f"Pretrain model not found in '{pretrain_dir}'")
 
     if USE_AMP:
         initialize_amp(model)
@@ -104,19 +112,25 @@ if __name__ == "__main__":
             pipe = Popen(command)
             pipe.wait()
     elif args.fold in config.folds:
-        if not SAVE_DIR.exists():
-            SAVE_DIR.mkdir(parents=True, exist_ok=True)
+        save_dir = config.experiments_dir / args.experiment
+        if not save_dir.exists():
+            save_dir.mkdir(parents=True, exist_ok=True)
 
-        with open(SAVE_DIR / 'source.py', 'w') as outfile:
+        with open(save_dir / 'source.py', 'w') as outfile:
             outfile.write(open(__file__).read())
 
         print("Model params", PARAMS)
-        with open(SAVE_DIR / 'params.json', 'w') as outfile:
+        with open(save_dir / 'params.json', 'w') as outfile:
             json.dump(PARAMS, outfile)
 
         val_folds = [args.fold]
         train_folds = list(set(config.folds) - set(val_folds))
-        save_fold_dir = SAVE_DIR / f'fold_{args.fold}'
+        save_fold_dir = save_dir / f'fold_{args.fold}'
         print(f"Val folds: {val_folds}, Train folds: {train_folds}")
         print(f"Fold save dir {save_fold_dir}")
-        train_fold(save_fold_dir, train_folds, val_folds)
+
+        pretrain_dir = ''
+        if args.pretrain:
+            pretrain_dir = config.experiments_dir / args.pretrain / f'fold_{args.fold}'
+
+        train_fold(save_fold_dir, train_folds, val_folds, pretrain_dir)
