@@ -26,8 +26,8 @@ parser.add_argument('--fold', required=False, type=int)
 parser.add_argument('--pretrain', default='', type=str)
 args = parser.parse_args()
 
-BATCH_SIZE = 140
-TRAIN_EPOCHS = 120
+BATCH_SIZE = 80
+TRAIN_EPOCHS = 140
 BASE_LR = 2e-5
 NUM_WORKERS = 4
 USE_AMP = True
@@ -40,7 +40,7 @@ def get_lr(base_lr, batch_size):
 
 PARAMS = {
     'nn_module': ('TimmModel', {
-        'encoder': 'gluon_resnet50_v1d',
+        'encoder': 'tf_efficientnet_b3_ns',
         'pretrained': True,
     }),
     'loss': ('AlaskaCrossEntropy', {
