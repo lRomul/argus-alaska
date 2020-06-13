@@ -1,6 +1,8 @@
 import re
 import torch
 import jpegio
+import shutil
+import numpy as np
 from pathlib import Path
 
 from argus import load_model
@@ -10,7 +12,10 @@ from src import config
 
 def target2altered(probs):
     altered = probs[:, config.altered_targets]
-    altered = torch.sum(altered, dim=1)
+    if isinstance(altered, torch.Tensor):
+        altered = torch.sum(altered, dim=1)
+    else:
+        altered = np.sum(altered, axis=1)
     return altered
 
 
@@ -67,3 +72,19 @@ def load_pretrain_weigths(model, pretrain_path):
     nn_state_dict = pretrain_model.get_nn_module().state_dict()
     model.get_nn_module().load_state_dict(nn_state_dict)
     return model
+
+
+def check_dir_not_exist(dir_path, remove=False):
+    dir_path = Path(dir_path)
+    if dir_path.exists():
+        if remove:
+            shutil.rmtree(dir_path)
+            print(f"Folder '{dir_path}' removed")
+        else:
+            response = input(f"Remove '{dir_path}' (y/n)? ")
+            if response.lower() == 'y':
+                shutil.rmtree(dir_path)
+                print(f"Folder '{dir_path}' removed")
+            else:
+                return False
+    return True

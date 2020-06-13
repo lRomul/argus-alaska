@@ -49,6 +49,17 @@ def get_folds_data(raw_images=False, quality=True):
     return folds_data
 
 
+def get_test_data():
+    test_data = []
+    for image_path in sorted(config.test_dir.glob("*")):
+        sample = {
+            'name': image_path.name,
+            'image_path': str(image_path),
+        }
+        test_data.append(sample)
+    return test_data
+
+
 class AlaskaBatchSampler(BatchSampler):
     def __init__(self, dataset, batch_size, epoch_size=None, train=True, drop_last=True):
         self.dataset = dataset
@@ -114,8 +125,11 @@ class AlaskaDataset(Dataset):
         return len(self.data)
 
     def get_sample(self, idx):
-        name_sample = self.data[idx[0]]
-        sample = name_sample[idx[1]]
+        if isinstance(idx, (tuple, list)):
+            name_sample = self.data[idx[0]]
+            sample = name_sample[idx[1]]
+        else:
+            sample = self.data[idx]
 
         if 'raw_image' in sample:
             image = decode_raw_image(sample['raw_image'])

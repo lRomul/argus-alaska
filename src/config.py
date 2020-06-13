@@ -12,6 +12,7 @@ test_dir = data_dir / 'Test'
 
 train_folds_path = data_dir / 'train_folds.csv'
 experiments_dir = data_dir / 'experiments'
+predictions_dir = data_dir / 'predictions'
 quality_json_path = data_dir / 'quality.json'
 classes = ['Cover', 'JMiPOD', 'JUNIWARD', 'UERD']
 unaltered_target = 0
