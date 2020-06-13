@@ -1,5 +1,5 @@
 import json
-import numpy as np
+import random
 import pandas as pd
 from PIL import Image
 
@@ -53,26 +53,27 @@ def get_test_data():
 
 
 class AlaskaBatchSampler(BatchSampler):
-    def __init__(self, dataset, batch_size, epoch_size=None, train=True, drop_last=True):
+    def __init__(self, dataset, batch_size, train=True, drop_last=True):
         self.dataset = dataset
         self.batch_size = batch_size
-        if epoch_size is None:
-            self.epoch_size = len(dataset)
-        else:
-            self.epoch_size = epoch_size
+        self.epoch_size = len(dataset) * len(config.classes)
         self.train = train
         self.drop_last = drop_last
 
+    def get_samples(self):
+        samples = []
+        for idx in range(len(self.dataset)):
+            for cls in config.classes:
+                samples.append((idx, cls))
+        return samples
+
     def train_samples(self):
-        indexes = np.random.randint(len(self.dataset), size=self.epoch_size)
-        classes = np.random.choice(config.classes, size=self.epoch_size)
-        return zip(indexes, classes)
+        samples = self.get_samples()
+        random.shuffle(samples)
+        return samples
 
     def val_samples(self):
-        indexes = np.arange(self.epoch_size)
-        repeat_count = (self.epoch_size // len(config.classes)) + 1
-        classes = config.classes * repeat_count
-        return zip(indexes, classes[:self.epoch_size])
+        return self.get_samples()
 
     def __iter__(self):
         batch = []
@@ -91,9 +92,9 @@ class AlaskaBatchSampler(BatchSampler):
 
     def __len__(self):
         if self.drop_last:
-            return len(self.epoch_size) // self.batch_size
+            return self.epoch_size // self.batch_size
         else:
-            return (len(self.epoch_size) + self.batch_size - 1) // self.batch_size
+            return (self.epoch_size + self.batch_size - 1) // self.batch_size
 
 
 class AlaskaDataset(Dataset):
