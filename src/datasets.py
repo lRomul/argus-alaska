@@ -1,27 +1,21 @@
-import cv2
 import json
 import numpy as np
 import pandas as pd
-from src import config
+from PIL import Image
 
 import torch
 from torch.utils.data import Dataset, BatchSampler
 
-
-def read_raw_image(path):
-    with open(str(path), 'rb') as file:
-        buffer = file.read()
-
-    raw_image = np.frombuffer(buffer, dtype='uint8')
-    return raw_image
+from src import config
 
 
-def decode_raw_image(raw_image):
-    image = cv2.imdecode(raw_image, cv2.IMREAD_UNCHANGED)
+def load_image(image_path):
+    image = Image.open(image_path)
+    image = image.convert('RGB')
     return image
 
 
-def get_folds_data(raw_images=False, quality=True):
+def get_folds_data(quality=True):
     train_folds_df = pd.read_csv(config.train_folds_path)
     if quality:
         with open(config.quality_json_path) as file:
@@ -42,8 +36,6 @@ def get_folds_data(raw_images=False, quality=True):
                 'image_path': str(image_path),
                 'target': trg
             }
-            if raw_images:
-                sample[cls]['raw_image'] = read_raw_image(image_path)
         folds_data.append(sample)
 
     return folds_data
@@ -130,11 +122,9 @@ class AlaskaDataset(Dataset):
             sample = name_sample[idx[1]]
         else:
             sample = self.data[idx]
+            name_sample = sample
 
-        if 'raw_image' in sample:
-            image = decode_raw_image(sample['raw_image'])
-        else:
-            image = cv2.imread(sample['image_path'])
+        image = load_image(sample['image_path'])
 
         if not self.target:
             return image

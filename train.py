@@ -74,7 +74,7 @@ def train_fold(save_dir, train_folds, val_folds, pretrain_dir=''):
 
     train_transform = get_transforms(train=True)
     test_transform = get_transforms(train=False)
-
+    
     train_dataset = AlaskaDataset(folds_data, train_folds, transform=train_transform)
     train_sampler = AlaskaBatchSampler(train_dataset, BATCH_SIZE, train=True)
     val_dataset = AlaskaDataset(folds_data, val_folds, transform=test_transform)
