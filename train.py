@@ -26,12 +26,12 @@ parser.add_argument('--fold', required=False, type=int)
 parser.add_argument('--pretrain', default='', type=str)
 args = parser.parse_args()
 
-BATCH_SIZE = 32
-TRAIN_EPOCHS = 120
+BATCH_SIZE = 80
+TRAIN_EPOCHS = 40
 BASE_LR = 1e-4
 NUM_WORKERS = 4
 USE_AMP = True
-DEVICES = ['cuda']
+DEVICES = ['cuda:0', 'cuda:1', 'cuda:2', 'cuda:3']
 
 
 def get_lr(base_lr, batch_size):
@@ -40,7 +40,7 @@ def get_lr(base_lr, batch_size):
 
 PARAMS = {
     'nn_module': ('TimmModel', {
-        'encoder': 'gluon_resnet50_v1d',
+        'encoder': 'tf_efficientnet_b3_ns',
         'pretrained': True,
     }),
     'loss': ('AlaskaCrossEntropy', {
