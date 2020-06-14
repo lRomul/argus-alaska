@@ -7,9 +7,9 @@ from src.models.classifiers import Classifier
 class TimmModel(nn.Module):
     def __init__(self,
                  encoder="gluon_resnet50_v1d",
-                 pretrained=True):
+                 **kwargs):
         super().__init__()
-        self.model = create_model(encoder, pretrained=pretrained)
+        self.model = create_model(encoder, **kwargs)
 
         if 'resnet' in encoder:
             self.model.fc = Classifier(self.model.fc.in_features)
