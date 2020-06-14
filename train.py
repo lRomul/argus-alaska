@@ -28,7 +28,7 @@ args = parser.parse_args()
 
 BATCH_SIZE = 80
 TRAIN_EPOCHS = 40
-BASE_LR = 1e-4
+BASE_LR = 1e-3
 NUM_WORKERS = 4
 USE_AMP = True
 DEVICES = ['cuda:0', 'cuda:1', 'cuda:2', 'cuda:3']
@@ -42,10 +42,12 @@ PARAMS = {
     'nn_module': ('TimmModel', {
         'encoder': 'tf_efficientnet_b3_ns',
         'pretrained': True,
+        'drop_rate': 0.3,
+        'drop_path_rate': 0.2,
     }),
     'loss': ('AlaskaCrossEntropy', {
         'stegano_weight': 1.0,
-        'quality_weight': 1.0,
+        'quality_weight': 0.05,
         'smooth_factor': 0.05,
         'ohem_rate': 1.0
     }),
