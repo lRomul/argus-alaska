@@ -10,7 +10,7 @@ uerd_dir = data_dir / 'UERD'
 sample_submission_path = data_dir / 'sample_submission.csv'
 test_dir = data_dir / 'Test'
 
-train_folds_path = data_dir / 'train_folds.csv'
+train_folds_path = data_dir / 'train_folds_v2.csv'
 experiments_dir = data_dir / 'experiments'
 predictions_dir = data_dir / 'predictions'
 quality_json_path = data_dir / 'quality.json'
