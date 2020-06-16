@@ -51,7 +51,7 @@ def blend_folds_submission():
 
         names = preds['name']
         if image_names is not None:
-            assert np.all(image_names != names)
+            assert np.all(image_names == names)
         image_names = names
 
     altered_pred = np.stack(altered_pred_lst, axis=0)
