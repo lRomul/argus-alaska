@@ -26,7 +26,7 @@ parser.add_argument('--fold', required=False, type=int)
 parser.add_argument('--pretrain', default='', type=str)
 args = parser.parse_args()
 
-BATCH_SIZE = 24
+BATCH_SIZE = 44
 TRAIN_EPOCHS = 60
 BASE_LR = 3e-4
 NUM_WORKERS = 2
@@ -40,7 +40,7 @@ def get_lr(base_lr, batch_size):
 
 PARAMS = {
     'nn_module': ('TimmModel', {
-        'encoder': 'tf_efficientnet_b7_ns',
+        'encoder': 'tf_efficientnet_b5_ns',
         'pretrained': True,
         'drop_rate': 0.5,
         'drop_path_rate': 0.2,
