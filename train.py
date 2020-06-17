@@ -42,7 +42,7 @@ PARAMS = {
     'nn_module': ('TimmModel', {
         'encoder': 'tf_efficientnet_b5_ns',
         'pretrained': True,
-        'drop_rate': 0.5,
+        'drop_rate': 0.4,
         'drop_path_rate': 0.2,
     }),
     'loss': ('AlaskaCrossEntropy', {
