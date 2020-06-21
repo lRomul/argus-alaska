@@ -27,7 +27,7 @@ parser.add_argument('--pretrain', default='', type=str)
 args = parser.parse_args()
 
 BATCH_SIZE = 44
-TRAIN_EPOCHS = 60
+TRAIN_EPOCHS = 20
 BASE_LR = 3e-5
 NUM_WORKERS = 2
 USE_AMP = True
