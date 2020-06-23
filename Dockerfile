@@ -17,7 +17,7 @@ RUN pip3 install --no-cache-dir numpy==1.18.4
 
 # Install PyTorch
 RUN pip3 install --no-cache-dir \
-    torch==1.5.0 \
+    torch==1.5.1 \
     torchvision==0.6.0
 
 RUN git clone https://github.com/NVIDIA/apex &&\
@@ -44,7 +44,7 @@ RUN pip install --no-cache-dir \
 
 RUN pip install -U git+https://github.com/lRomul/argus.git@custom_build
 
-RUN git clone --depth 1 -b master https://github.com/dwgoon/jpegio &&\
+RUN git clone -b master https://github.com/dwgoon/jpegio &&\
     cd jpegio &&\
     git checkout fe577469cc332c14f8647167ca8ca2b573f5071b &&\
     python setup.py install &&\
