@@ -27,8 +27,8 @@ parser.add_argument('--pretrain', default='', type=str)
 args = parser.parse_args()
 
 BATCH_SIZE = 44
-TRAIN_EPOCHS = 20
-BASE_LR = 3e-5
+TRAIN_EPOCHS = 60
+BASE_LR = 3e-4
 NUM_WORKERS = 2
 USE_AMP = True
 DEVICES = ['cuda:0', 'cuda:1', 'cuda:2', 'cuda:3']
@@ -42,8 +42,8 @@ PARAMS = {
     'nn_module': ('TimmModel', {
         'encoder': 'tf_efficientnet_b5_ns',
         'pretrained': True,
-        'drop_rate': 0.4,
-        'drop_path_rate': 0.2,
+        'drop_rate': 0.6,
+        'drop_path_rate': 0.3,
     }),
     'loss': ('AlaskaCrossEntropy', {
         'stegano_weight': 1.0,
@@ -51,7 +51,7 @@ PARAMS = {
         'smooth_factor': 0.05,
         'ohem_rate': 1.0
     }),
-    'optimizer': ('AdamW', {'lr': get_lr(BASE_LR, BATCH_SIZE)}),
+    'optimizer': ('AdamP', {'lr': get_lr(BASE_LR, BATCH_SIZE)}),
     'device': DEVICES[0],
 }
 

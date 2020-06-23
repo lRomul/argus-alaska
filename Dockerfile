@@ -35,7 +35,8 @@ RUN pip3 install --no-cache-dir \
     notebook==6.0.3 \
     scikit-learn==0.22.2.post1 \
     scikit-image==0.16.2 \
-    albumentations==0.4.5
+    albumentations==0.4.5 \
+    adamp==0.2.0
 
 RUN pip install --no-cache-dir \
     timm==0.1.26 \

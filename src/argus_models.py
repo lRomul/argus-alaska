@@ -1,7 +1,9 @@
 import torch
+from adamp import AdamP
 
 from argus import Model
 from argus.utils import deep_detach
+from argus.optimizer import pytorch_optimizers
 
 from src.models import CustomEfficient, CustomResnet, TimmModel
 from src.losses import AlaskaCrossEntropy
@@ -19,6 +21,10 @@ class AlaskaModel(Model):
     }
     loss = {
         'AlaskaCrossEntropy': AlaskaCrossEntropy
+    }
+    optimizer = {
+        'AdamP': AdamP,
+        **pytorch_optimizers
     }
     prediction_transform = get_prediction_transform
 
