@@ -26,7 +26,8 @@ parser.add_argument('--fold', required=False, type=int)
 parser.add_argument('--pretrain', default='', type=str)
 args = parser.parse_args()
 
-BATCH_SIZE = 44
+BATCH_SIZE = 48
+ITER_SIZE = 2
 TRAIN_EPOCHS = 60
 BASE_LR = 3e-4
 NUM_WORKERS = 2
@@ -40,10 +41,10 @@ def get_lr(base_lr, batch_size):
 
 PARAMS = {
     'nn_module': ('TimmModel', {
-        'encoder': 'tf_efficientnet_b5_ns',
+        'encoder': 'tf_efficientnet_b7_ns',
         'pretrained': True,
-        'drop_rate': 0.6,
-        'drop_path_rate': 0.3,
+        'drop_rate': 0.5,
+        'drop_path_rate': 0.2,
     }),
     'loss': ('AlaskaCrossEntropy', {
         'stegano_weight': 1.0,
@@ -51,8 +52,9 @@ PARAMS = {
         'smooth_factor': 0.05,
         'ohem_rate': 1.0
     }),
-    'optimizer': ('AdamP', {'lr': get_lr(BASE_LR, BATCH_SIZE)}),
+    'optimizer': ('AdamW', {'lr': get_lr(BASE_LR, BATCH_SIZE)}),
     'device': DEVICES[0],
+    'iter_size': ITER_SIZE
 }
 
 
@@ -90,7 +92,7 @@ def train_fold(save_dir, train_folds, val_folds, pretrain_dir=''):
 
     callbacks = [
         MonitorCheckpoint(save_dir, monitor='val_weighted_auc', max_saves=1),
-        CosineAnnealingLR(T_max=TRAIN_EPOCHS, eta_min=get_lr(1e-7, BATCH_SIZE)),
+        CosineAnnealingLR(T_max=TRAIN_EPOCHS, eta_min=get_lr(1e-6, BATCH_SIZE)),
         LoggingToFile(save_dir / 'log.txt'),
         LoggingToCSV(save_dir / 'log.csv')
     ]
