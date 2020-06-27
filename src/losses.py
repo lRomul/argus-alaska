@@ -2,6 +2,8 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 
+from src.utils import target2altered
+
 
 class LabelSmoothingCrossEntropy(nn.Module):
     """
@@ -54,12 +56,14 @@ class SmoothingOhemCrossEntropy(nn.Module):
 class AlaskaCrossEntropy(nn.Module):
     def __init__(self,
                  stegano_weight=1.0,
+                 altered_weight=1.0,
                  quality_weight=1.0,
                  smooth_factor=0,
                  ohem_rate=1.0):
         super().__init__()
 
         self.stegano_weight = stegano_weight
+        self.altered_weight = altered_weight
         self.quality_weight = quality_weight
         self.smooth_factor = smooth_factor
         self.ohem_rate = ohem_rate
@@ -67,6 +71,7 @@ class AlaskaCrossEntropy(nn.Module):
         loss = SmoothingOhemCrossEntropy(smooth_factor=smooth_factor,
                                          ohem_rate=ohem_rate)
         self.stegano_ce = loss
+        self.altered_ce = loss
         self.quality_ce = loss
 
     def __call__(self, pred, target, training=False):
@@ -77,6 +82,12 @@ class AlaskaCrossEntropy(nn.Module):
         if self.stegano_weight:
             loss += self.stegano_weight \
                     * self.stegano_ce(stegano_pred, stegano_target,
+                                      training=training)
+
+        if self.altered_weight:
+            loss += self.altered_weight \
+                    * self.stegano_ce(target2altered(stegano_pred),
+                                      target2altered(stegano_target),
                                       training=training)
 
         if self.quality_weight:

@@ -55,6 +55,7 @@ PARAMS = {
     }),
     'loss': ('AlaskaCrossEntropy', {
         'stegano_weight': 1.0,
+        'altered_weight': 1.0,
         'quality_weight': 0.05,
         'smooth_factor': 0.05,
         'ohem_rate': 1.0
