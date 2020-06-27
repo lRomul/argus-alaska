@@ -50,6 +50,8 @@ RUN git clone -b master https://github.com/dwgoon/jpegio &&\
     python setup.py install &&\
     cd .. && rm -rf jpegio
 
+# RUN pip install git+https://github.com/mapillary/inplace_abn.git@v1.0.12
+
 ENV PYTHONPATH $PYTHONPATH:/workdir
 ENV TORCH_HOME=/workdir/data/.torch
 

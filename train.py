@@ -44,6 +44,7 @@ PARAMS = {
         'pretrained': True,
         'drop_rate': 0.6,
         'drop_path_rate': 0.3,
+        'inplace_abn': True,
     }),
     'loss': ('AlaskaCrossEntropy', {
         'stegano_weight': 1.0,
