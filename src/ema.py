@@ -82,10 +82,12 @@ class EmaMonitorCheckpoint(MonitorCheckpoint):
         else:
             nn_module = ema
 
+        no_ema_nn_module = argus_state.model.get_nn_module()
         state = {
             'model_name': argus_state.model.__class__.__name__,
             'params': argus_state.model.params,
-            'nn_state_dict': deep_to(nn_module.state_dict(), 'cpu')
+            'nn_state_dict': deep_to(nn_module.state_dict(), 'cpu'),
+            'no_ema_nn_state_dict': deep_to(no_ema_nn_module.state_dict(), 'cpu')
         }
         torch.save(state, file_path)
         argus_state.logger.info(f"Model saved to '{file_path}'")
