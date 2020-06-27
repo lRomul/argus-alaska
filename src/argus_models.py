@@ -68,7 +68,7 @@ class AlaskaModel(Model):
 
         torch.cuda.synchronize()
         if self.model_ema is not None:
-            self.model_ema.update(self.nn_module)
+            self.model_ema.update(self.get_nn_module())
 
         prediction = deep_detach(prediction)
         target = deep_detach(target)

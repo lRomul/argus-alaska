@@ -7,6 +7,7 @@ from pathlib import Path
 
 from argus import load_model
 
+from src.ema import ModelEma
 from src import config
 
 
@@ -31,6 +32,13 @@ def initialize_amp(model,
         loss_scale=loss_scale
     )
     model.amp = amp
+
+
+def initialize_ema(model, decay=0.9999, device='', resume=''):
+    model.model_ema = ModelEma(model.get_nn_module(),
+                               decay=decay,
+                               device=device,
+                               resume=resume)
 
 
 def get_image_quality(image_path):

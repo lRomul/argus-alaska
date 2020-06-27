@@ -16,7 +16,11 @@ from src.datasets import AlaskaDataset, AlaskaBatchSampler, get_folds_data
 from src.argus_models import AlaskaModel
 from src.metrics import Accuracy
 from src.transforms import get_transforms
-from src.utils import initialize_amp, get_best_model_path, load_pretrain_weigths
+from src.utils import (
+    initialize_amp, initialize_ema,
+    get_best_model_path, load_pretrain_weigths
+)
+from src.ema import EmaMonitorCheckpoint
 from src import config
 
 
@@ -33,6 +37,7 @@ COOLDOWN = [False, True]
 BASE_LR = 3e-4
 NUM_WORKERS = 2
 USE_AMP = True
+USE_EMA = True
 DEVICES = ['cuda:0', 'cuda:1', 'cuda:2', 'cuda:3']
 
 
@@ -75,7 +80,14 @@ def train_fold(save_dir, train_folds, val_folds, pretrain_dir=''):
 
     if USE_AMP:
         initialize_amp(model)
+
     model.set_device(DEVICES)
+
+    if USE_EMA:
+        initialize_ema(model, decay=0.9999)
+        checkpoint = EmaMonitorCheckpoint
+    else:
+        checkpoint = MonitorCheckpoint
 
     for epochs, cooldown in zip(TRAIN_EPOCHS, COOLDOWN):
         train_transform = get_transforms(train=not cooldown)
@@ -93,7 +105,7 @@ def train_fold(save_dir, train_folds, val_folds, pretrain_dir=''):
                                 num_workers=NUM_WORKERS * 2)
 
         callbacks = [
-            MonitorCheckpoint(save_dir, monitor='val_weighted_auc', max_saves=1),
+            checkpoint(save_dir, monitor='val_weighted_auc', max_saves=1),
             LoggingToFile(save_dir / 'log.txt'),
             LoggingToCSV(save_dir / 'log.csv')
         ]
