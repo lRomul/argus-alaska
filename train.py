@@ -31,7 +31,7 @@ parser.add_argument('--pretrain', default='', type=str)
 args = parser.parse_args()
 
 BATCH_SIZE = 48
-VAL_BATCH_SIZE = 16
+VAL_BATCH_SIZE = 32
 ITER_SIZE = 2
 TRAIN_EPOCHS = [60, 10]
 COOLDOWN = [False, True]
