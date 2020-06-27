@@ -2,14 +2,14 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 
-from src.utils import target2altered
+from src import config
 
 
 class LabelSmoothingCrossEntropy(nn.Module):
     """
     NLL loss with label smoothing.
     """
-    def __init__(self, smoothing=0.1):
+    def __init__(self, smoothing=0.1, softmax=True):
         """
         Constructor for the LabelSmoothing module.
         :param smoothing: label smoothing factor
@@ -18,9 +18,13 @@ class LabelSmoothingCrossEntropy(nn.Module):
         assert smoothing < 1.0
         self.smoothing = smoothing
         self.confidence = 1. - smoothing
+        self.softmax = softmax
 
     def forward(self, x, target):
-        logprobs = F.log_softmax(x, dim=-1)
+        if self.softmax:
+            logprobs = F.log_softmax(x, dim=-1)
+        else:
+            logprobs = torch.log(x)
         nll_loss = -logprobs.gather(dim=-1, index=target.unsqueeze(1))
         nll_loss = nll_loss.squeeze(1)
         smooth_loss = -logprobs.mean(dim=-1)
@@ -29,11 +33,12 @@ class LabelSmoothingCrossEntropy(nn.Module):
 
 
 class SmoothingOhemCrossEntropy(nn.Module):
-    def __init__(self, smooth_factor=0.0, ohem_rate=1.0):
+    def __init__(self, smooth_factor=0.0, ohem_rate=1.0, softmax=True):
         super().__init__()
         self.smooth_factor = float(smooth_factor)
         self.ohem_rate = ohem_rate
-        self.ce = LabelSmoothingCrossEntropy(smoothing=self.smooth_factor)
+        self.ce = LabelSmoothingCrossEntropy(smoothing=self.smooth_factor,
+                                             softmax=softmax)
 
     def forward(self, label_input, label_target, training=False):
         if isinstance(label_target, (tuple, list)):
@@ -68,31 +73,48 @@ class AlaskaCrossEntropy(nn.Module):
         self.smooth_factor = smooth_factor
         self.ohem_rate = ohem_rate
 
-        loss = SmoothingOhemCrossEntropy(smooth_factor=smooth_factor,
-                                         ohem_rate=ohem_rate)
-        self.stegano_ce = loss
-        self.altered_ce = loss
-        self.quality_ce = loss
+        self.stegano_ce = SmoothingOhemCrossEntropy(smooth_factor=smooth_factor,
+                                                    ohem_rate=ohem_rate,
+                                                    softmax=False)
+        self.altered_ce = SmoothingOhemCrossEntropy(smooth_factor=smooth_factor,
+                                                    ohem_rate=ohem_rate,
+                                                    softmax=False)
+        self.quality_ce = SmoothingOhemCrossEntropy(smooth_factor=smooth_factor,
+                                                    ohem_rate=ohem_rate,
+                                                    softmax=True)
 
     def __call__(self, pred, target, training=False):
         stegano_pred, quality_pred = pred
         stegano_target, quality_target = target
 
+        stegano_pred = F.softmax(stegano_pred, dim=-1)
+
         loss = 0
         if self.stegano_weight:
-            loss += self.stegano_weight \
-                    * self.stegano_ce(stegano_pred, stegano_target,
-                                      training=training)
+            loss += (
+                self.stegano_weight
+                * self.stegano_ce(stegano_pred, stegano_target,
+                                  training=training)
+            )
 
         if self.altered_weight:
-            loss += self.altered_weight \
-                    * self.stegano_ce(target2altered(stegano_pred),
-                                      target2altered(stegano_target),
-                                      training=training)
+            altered_pred = torch.stack([
+                stegano_pred[:, config.unaltered_target],
+                torch.sum(stegano_pred[:, config.altered_targets], dim=1),
+            ], dim=1)
+            altered_target = stegano_target.to(torch.bool).to(torch.int64)
+            loss += (
+                self.altered_weight
+                * self.altered_ce(altered_pred,
+                                  altered_target,
+                                  training=training)
+            )
 
         if self.quality_weight:
-            loss += self.quality_weight \
-                    * self.quality_ce(quality_pred, quality_target,
-                                      training=training)
+            loss += (
+                self.quality_weight
+                * self.quality_ce(quality_pred, quality_target,
+                                  training=training)
+            )
 
         return loss
