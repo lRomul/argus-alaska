@@ -31,6 +31,7 @@ parser.add_argument('--pretrain', default='', type=str)
 args = parser.parse_args()
 
 BATCH_SIZE = 48
+VAL_BATCH_SIZE = 16
 ITER_SIZE = 2
 TRAIN_EPOCHS = [60, 10]
 COOLDOWN = [False, True]
@@ -96,16 +97,16 @@ def train_fold(save_dir, train_folds, val_folds, pretrain_dir=''):
         train_dataset = AlaskaDataset(folds_data, train_folds, transform=train_transform)
         train_sampler = AlaskaBatchSampler(train_dataset, BATCH_SIZE, train=True)
         val_dataset = AlaskaDataset(folds_data, val_folds, transform=test_transform)
-        val_sampler = AlaskaBatchSampler(val_dataset, (BATCH_SIZE * 2) // ITER_SIZE,
+        val_sampler = AlaskaBatchSampler(val_dataset, VAL_BATCH_SIZE,
                                          train=False, drop_last=False)
 
         train_loader = DataLoader(train_dataset, batch_sampler=train_sampler,
                                   num_workers=NUM_WORKERS)
         val_loader = DataLoader(val_dataset, batch_sampler=val_sampler,
-                                num_workers=NUM_WORKERS * 2)
+                                num_workers=NUM_WORKERS)
 
         callbacks = [
-            checkpoint(save_dir, monitor='val_weighted_auc', max_saves=1),
+            checkpoint(save_dir, monitor='val_weighted_auc', max_saves=10),
             LoggingToFile(save_dir / 'log.txt'),
             LoggingToCSV(save_dir / 'log.csv')
         ]
