@@ -28,7 +28,8 @@ args = parser.parse_args()
 
 BATCH_SIZE = 48
 ITER_SIZE = 2
-TRAIN_EPOCHS = 60
+TRAIN_EPOCHS = [60, 10]
+COOLDOWN = [False, True]
 BASE_LR = 3e-4
 NUM_WORKERS = 2
 USE_AMP = True
@@ -76,33 +77,38 @@ def train_fold(save_dir, train_folds, val_folds, pretrain_dir=''):
         initialize_amp(model)
     model.set_device(DEVICES)
 
-    train_transform = get_transforms(train=True)
-    test_transform = get_transforms(train=False)
+    for epochs, cooldown in zip(TRAIN_EPOCHS, COOLDOWN):
+        train_transform = get_transforms(train=not cooldown)
+        test_transform = get_transforms(train=False)
 
-    train_dataset = AlaskaDataset(folds_data, train_folds, transform=train_transform)
-    train_sampler = AlaskaBatchSampler(train_dataset, BATCH_SIZE, train=True)
-    val_dataset = AlaskaDataset(folds_data, val_folds, transform=test_transform)
-    val_sampler = AlaskaBatchSampler(val_dataset, (BATCH_SIZE * 2) // ITER_SIZE,
-                                     train=False, drop_last=False)
+        train_dataset = AlaskaDataset(folds_data, train_folds, transform=train_transform)
+        train_sampler = AlaskaBatchSampler(train_dataset, BATCH_SIZE, train=True)
+        val_dataset = AlaskaDataset(folds_data, val_folds, transform=test_transform)
+        val_sampler = AlaskaBatchSampler(val_dataset, (BATCH_SIZE * 2) // ITER_SIZE,
+                                         train=False, drop_last=False)
 
-    train_loader = DataLoader(train_dataset, batch_sampler=train_sampler,
-                              num_workers=NUM_WORKERS)
-    val_loader = DataLoader(val_dataset, batch_sampler=val_sampler,
-                            num_workers=NUM_WORKERS * 2)
+        train_loader = DataLoader(train_dataset, batch_sampler=train_sampler,
+                                  num_workers=NUM_WORKERS)
+        val_loader = DataLoader(val_dataset, batch_sampler=val_sampler,
+                                num_workers=NUM_WORKERS * 2)
 
-    callbacks = [
-        MonitorCheckpoint(save_dir, monitor='val_weighted_auc', max_saves=1),
-        CosineAnnealingLR(T_max=TRAIN_EPOCHS, eta_min=get_lr(1e-6, BATCH_SIZE)),
-        LoggingToFile(save_dir / 'log.txt'),
-        LoggingToCSV(save_dir / 'log.csv')
-    ]
-    metrics = ['weighted_auc', Accuracy('stegano'), Accuracy('quality')]
+        callbacks = [
+            MonitorCheckpoint(save_dir, monitor='val_weighted_auc', max_saves=1),
+            LoggingToFile(save_dir / 'log.txt'),
+            LoggingToCSV(save_dir / 'log.csv')
+        ]
+        if not cooldown:
+            lr_scheduler = CosineAnnealingLR(T_max=epochs,
+                                             eta_min=get_lr(1e-6, BATCH_SIZE))
+            callbacks.append(lr_scheduler)
 
-    model.fit(train_loader,
-              val_loader=val_loader,
-              max_epochs=TRAIN_EPOCHS,
-              callbacks=callbacks,
-              metrics=metrics)
+        metrics = ['weighted_auc', Accuracy('stegano'), Accuracy('quality')]
+
+        model.fit(train_loader,
+                  val_loader=val_loader,
+                  max_epochs=epochs,
+                  callbacks=callbacks,
+                  metrics=metrics)
 
 
 if __name__ == "__main__":
