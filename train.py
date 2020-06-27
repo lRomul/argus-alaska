@@ -82,7 +82,7 @@ def train_fold(save_dir, train_folds, val_folds, pretrain_dir=''):
     train_dataset = AlaskaDataset(folds_data, train_folds, transform=train_transform)
     train_sampler = AlaskaBatchSampler(train_dataset, BATCH_SIZE, train=True)
     val_dataset = AlaskaDataset(folds_data, val_folds, transform=test_transform)
-    val_sampler = AlaskaBatchSampler(val_dataset, BATCH_SIZE * 2,
+    val_sampler = AlaskaBatchSampler(val_dataset, (BATCH_SIZE * 2) // ITER_SIZE,
                                      train=False, drop_last=False)
 
     train_loader = DataLoader(train_dataset, batch_sampler=train_sampler,

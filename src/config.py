@@ -33,5 +33,5 @@ altered_targets = [class2target[cls] for cls in altered_classes]
 unaltered_targets = [class2target[cls] for cls in unaltered_classes]
 
 num_unique_targets = len(set(class2target.values()))
-n_folds = 5
+n_folds = 2
 folds = list(range(n_folds))
