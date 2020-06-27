@@ -35,7 +35,7 @@ def initialize_amp(model,
 
 
 def initialize_ema(model, decay=0.9999, device='', resume=''):
-    model.model_ema = ModelEma(model.get_nn_module(),
+    model.model_ema = ModelEma(model.nn_module,
                                decay=decay,
                                device=device,
                                resume=resume)

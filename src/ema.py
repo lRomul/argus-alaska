@@ -4,6 +4,7 @@ import shutil
 import logging
 from copy import deepcopy
 from collections import OrderedDict
+from torch.nn.parallel.data_parallel import DataParallel
 
 from argus.utils import deep_to
 from argus.engine import State
@@ -75,7 +76,12 @@ class ModelEma:
 class EmaMonitorCheckpoint(MonitorCheckpoint):
 
     def save(self, file_path, argus_state):
-        nn_module = argus_state.model.model_ema.ema
+        ema = argus_state.model.model_ema.ema
+        if isinstance(ema, DataParallel):
+            nn_module = ema.module
+        else:
+            nn_module = ema
+
         state = {
             'model_name': argus_state.model.__class__.__name__,
             'params': argus_state.model.params,
