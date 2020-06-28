@@ -30,8 +30,8 @@ parser.add_argument('--fold', required=False, type=int)
 parser.add_argument('--pretrain', default='', type=str)
 args = parser.parse_args()
 
-BATCH_SIZE = 48
-VAL_BATCH_SIZE = 32
+BATCH_SIZE = 8
+VAL_BATCH_SIZE = 16
 ITER_SIZE = 2
 TRAIN_EPOCHS = [60, 10]
 COOLDOWN = [False, True]
@@ -39,7 +39,7 @@ BASE_LR = 3e-4
 NUM_WORKERS = 2
 USE_AMP = True
 USE_EMA = True
-DEVICES = ['cuda:0', 'cuda:1', 'cuda:2', 'cuda:3']
+DEVICES = ['cuda']
 
 
 def get_lr(base_lr, batch_size):

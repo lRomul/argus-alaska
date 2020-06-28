@@ -5,8 +5,6 @@ import shutil
 import numpy as np
 from pathlib import Path
 
-from argus import load_model
-
 from src.ema import ModelEma
 from src import config
 
@@ -73,6 +71,35 @@ def get_best_model_path(dir_path, return_score=False):
         return best_model_path, best_score
     else:
         return best_model_path
+
+
+def load_model(file_path, device=None):
+    import os
+    from argus.model.build import MODEL_REGISTRY
+    from argus.utils import device_to_str, deep_to
+    from argus.model.model import cast_device
+
+    if os.path.isfile(file_path):
+        state = torch.load(file_path)
+
+        if state['model_name'] in MODEL_REGISTRY:
+            params = state['params']
+            if device is not None:
+                device = cast_device(device)
+                device = device_to_str(device)
+                params['device'] = device
+
+            model_class = MODEL_REGISTRY[state['model_name']]
+            model = model_class(params)
+            nn_state_dict = deep_to(state['no_ema_nn_state_dict'], model.device)
+
+            model.get_nn_module().load_state_dict(nn_state_dict)
+            model.eval()
+            return model
+        else:
+            raise ImportError(f"Model '{state['model_name']}' not found in scope")
+    else:
+        raise FileNotFoundError(f"No state found at {file_path}")
 
 
 def load_pretrain_weigths(model, pretrain_path):
