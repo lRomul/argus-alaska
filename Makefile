@@ -7,7 +7,7 @@ else
 	GPUS_OPTION=--gpus=$(GPUS)
 endif
 
-.PHONY: all build stop run attach
+.PHONY: all build stop run attach logs exec
 
 all: stop build run
 
