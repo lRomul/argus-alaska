@@ -102,7 +102,13 @@ class AlaskaCrossEntropy(nn.Module):
                 stegano_pred[:, config.unaltered_target],
                 torch.sum(stegano_pred[:, config.altered_targets], dim=1),
             ], dim=1)
-            altered_target = stegano_target.to(torch.bool).to(torch.int64)
+            if isinstance(stegano_target, (tuple, list)):
+                stegano_trg1, stegano_trg2, lam = stegano_target
+                stegano_trg1 = stegano_trg1.to(torch.bool).to(torch.int64)
+                stegano_trg2 = stegano_trg2.to(torch.bool).to(torch.int64)
+                altered_target = stegano_trg1, stegano_trg2, lam
+            else:
+                altered_target = stegano_target.to(torch.bool).to(torch.int64)
             loss += (
                 self.altered_weight
                 * self.altered_ce(altered_pred,
