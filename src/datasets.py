@@ -1,5 +1,7 @@
 import json
+import time
 import random
+import numpy as np
 import pandas as pd
 from PIL import Image
 
@@ -136,8 +138,16 @@ class AlaskaDataset(Dataset):
         target = stegano_target, quality_target
         return image, target
 
+    def _set_random_seed(self, idx):
+        if isinstance(idx, (tuple, list)):
+            idx = idx[0]
+        seed = int(time.time() * 1000.0) + idx
+        random.seed(seed)
+        np.random.seed(seed % (2**32 - 1))
+
     @torch.no_grad()
     def __getitem__(self, idx):
+        self._set_random_seed(idx)
         if not self.target:
             image = self.get_sample(idx)
             if self.transform is not None:
@@ -146,7 +156,19 @@ class AlaskaDataset(Dataset):
         else:
             image, target = self.get_sample(idx)
             if self.mixer is not None:
-                image, target = self.mixer(self, image, target)
+                stegano = idx[1] in config.altered_classes
+                if stegano:
+                    stegano_sample = image, target
+                    cover_sample = self.get_sample((idx[0], 'Cover'))
+                    _, stegano_sample = self.mixer(cover_sample, stegano_sample)
+                    image, target = stegano_sample
+                else:
+                    cover_sample = image, target
+                    altered_cls = np.random.choice(config.altered_classes)
+                    stegano_sample = self.get_sample((idx[0], altered_cls))
+                    cover_sample, _ = self.mixer(cover_sample, stegano_sample)
+                    image, target = cover_sample
+
             if self.transform is not None:
                 image = self.transform(image)
             return image, target

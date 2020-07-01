@@ -21,6 +21,7 @@ from src.utils import (
     get_best_model_path, load_pretrain_weigths
 )
 from src.ema import EmaMonitorCheckpoint
+from src.mixers import BitMix
 from src import config
 
 
@@ -32,14 +33,14 @@ args = parser.parse_args()
 
 BATCH_SIZE = 44
 VAL_BATCH_SIZE = 22
-ITER_SIZE = 2
+ITER_SIZE = 1
 TRAIN_EPOCHS = [60, 10]
 COOLDOWN = [False, True]
 BASE_LR = 3e-4
 NUM_WORKERS = 2
 USE_AMP = True
 USE_EMA = True
-DEVICES = ['cuda:0', 'cuda:1']
+DEVICES = ['cuda:0', 'cuda:1', 'cuda:2', 'cuda:3']
 
 
 def get_lr(base_lr, batch_size):
@@ -92,10 +93,17 @@ def train_fold(save_dir, train_folds, val_folds, pretrain_dir=''):
         checkpoint = MonitorCheckpoint
 
     for epochs, cooldown in zip(TRAIN_EPOCHS, COOLDOWN):
-        train_transform = get_transforms(train=not cooldown)
         test_transform = get_transforms(train=False)
 
-        train_dataset = AlaskaDataset(folds_data, train_folds, transform=train_transform)
+        if not cooldown:
+            mixer = BitMix(gamma=0.25)
+            train_transform = get_transforms(train=True)
+        else:
+            mixer = None
+            train_transform = get_transforms(train=False)
+
+        train_dataset = AlaskaDataset(folds_data, train_folds,
+                                      transform=train_transform, mixer=mixer)
         train_sampler = AlaskaBatchSampler(train_dataset, BATCH_SIZE, train=True)
         val_dataset = AlaskaDataset(folds_data, val_folds, transform=test_transform)
         val_sampler = AlaskaBatchSampler(val_dataset, VAL_BATCH_SIZE,
