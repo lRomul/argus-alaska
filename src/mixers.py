@@ -49,6 +49,9 @@ class BitMix:
 
         lmb = 1 - np.sum(cover_crop != stegano_crop) / np.sum(cover_img != stegano_img)
 
+        if np.isnan(lmb):
+            lmb = 1
+
         cover_img[bbx1:bbx2, bby1:bby2] = stegano_crop
         stegano_img[bbx1:bbx2, bby1:bby2] = cover_crop
 
