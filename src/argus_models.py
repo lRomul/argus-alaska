@@ -33,36 +33,18 @@ class AlaskaModel(Model):
         self.amp = None
         self.model_ema = None
 
-        if 'iter_size' not in self.params:
-            self.params['iter_size'] = 1
-
     def train_step(self, batch, state) -> dict:
         self.train()
         self.optimizer.zero_grad()
 
-        input, target = batch
-        stegano_target, quality_target = target
-
-        inputs = torch.chunk(input, self.params['iter_size'], dim=0)
-        stegano_targets = torch.chunk(stegano_target, self.params['iter_size'], dim=0)
-        quality_targets = torch.chunk(quality_target, self.params['iter_size'], dim=0)
-        n_chunks = len(inputs)
-
-        for i, input, stegano_target, quality_target in zip(range(n_chunks), inputs,
-                                                            stegano_targets, quality_targets):
-            target = stegano_target, quality_target
-            input = deep_to(input, self.device, non_blocking=True)
-            target = deep_to(target, self.device, non_blocking=True)
-
-            prediction = self.nn_module(input)
-            loss = self.loss(prediction, target, training=True)
-            if self.amp is not None:
-                delay_unscale = i != (n_chunks - 1)
-                with self.amp.scale_loss(loss, self.optimizer,
-                                         delay_unscale=delay_unscale) as scaled_loss:
-                    scaled_loss.backward()
-            else:
-                loss.backward()
+        input, target = self.prepare_batch(batch, self.device)
+        prediction = self.nn_module(input)
+        loss = self.loss(prediction, target, training=True)
+        if self.amp is not None:
+            with self.amp.scale_loss(loss, self.optimizer) as scaled_loss:
+                scaled_loss.backward()
+        else:
+            loss.backward()
 
         self.optimizer.step()
 
