@@ -40,6 +40,13 @@ class BitMix:
         stegano_img, stegano_trg = stegano_sample
         stegano_img = np.array(stegano_img).copy()
 
+        diff = np.sum(cover_img != stegano_img)
+        
+        if not diff:
+            cover_target = mix_target(cover_trg, cover_trg, 1)
+            cover_sample = Image.fromarray(cover_img), cover_target
+            return cover_sample, cover_sample
+
         gamma = np.random.uniform(0, self.gamma)
 
         bbx1, bby1, bbx2, bby2 = rand_bbox(cover_img.shape, gamma)
@@ -47,10 +54,9 @@ class BitMix:
         cover_crop = cover_img[bbx1:bbx2, bby1:bby2].copy()
         stegano_crop = stegano_img[bbx1:bbx2, bby1:bby2].copy()
 
-        lmb = 1 - np.sum(cover_crop != stegano_crop) / np.sum(cover_img != stegano_img)
+        lmb = 1 - np.sum(cover_crop != stegano_crop) / diff
 
-        if np.isnan(lmb):
-            lmb = 1
+        assert not np.isnan(lmb)
 
         cover_img[bbx1:bbx2, bby1:bby2] = stegano_crop
         stegano_img[bbx1:bbx2, bby1:bby2] = cover_crop
