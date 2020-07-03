@@ -4,11 +4,25 @@ import jpegio
 import shutil
 import numpy as np
 from pathlib import Path
+from functools import partial
 
 from argus import load_model
 
 from src.ema import ModelEma
 from src import config
+
+
+def deep_chunk(input, chunks, dim=0):
+    partial_deep_chunk = partial(deep_chunk, chunks=chunks, dim=dim)
+    if isinstance(input, torch.Tensor):
+        return torch.chunk(input, chunks, dim=dim)
+    if isinstance(input, tuple) and len(input) > 0:
+        return list(zip(*map(partial_deep_chunk, input)))
+    if isinstance(input, list) and len(input) > 0:
+        return list(map(list, zip(*map(partial_deep_chunk, input))))
+    if isinstance(input, dict) and len(input) > 0:
+        return list(map(type(input), zip(*map(partial_deep_chunk, input.items()))))
+    return [input for _ in range(chunks)]
 
 
 def target2altered(probs):

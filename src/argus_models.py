@@ -7,6 +7,7 @@ from argus.optimizer import pytorch_optimizers
 
 from src.models import CustomEfficient, CustomResnet, TimmModel
 from src.losses import AlaskaCrossEntropy
+from src.utils import deep_chunk
 
 
 def get_prediction_transform():
@@ -33,18 +34,25 @@ class AlaskaModel(Model):
         self.amp = None
         self.model_ema = None
 
+        if 'iter_size' not in self.params:
+            self.params['iter_size'] = 1
+        self.iter_size = self.params['iter_size']
+
     def train_step(self, batch, state) -> dict:
         self.train()
         self.optimizer.zero_grad()
 
-        input, target = self.prepare_batch(batch, self.device)
-        prediction = self.nn_module(input)
-        loss = self.loss(prediction, target, training=True)
-        if self.amp is not None:
-            with self.amp.scale_loss(loss, self.optimizer) as scaled_loss:
-                scaled_loss.backward()
-        else:
-            loss.backward()
+        for i, chunk_batch in enumerate(deep_chunk(batch, self.iter_size)):
+            input, target = deep_to(chunk_batch, self.device, non_blocking=True)
+            prediction = self.nn_module(input)
+            loss = self.loss(prediction, target, training=True)
+            if self.amp is not None:
+                delay_unscale = i != (self.iter_size - 1)
+                with self.amp.scale_loss(loss, self.optimizer,
+                                         delay_unscale=delay_unscale) as scaled_loss:
+                    scaled_loss.backward()
+            else:
+                loss.backward()
 
         self.optimizer.step()
 

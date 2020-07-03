@@ -32,14 +32,15 @@ parser.add_argument('--pretrain', default='', type=str)
 args = parser.parse_args()
 
 BATCH_SIZE = 44
-VAL_BATCH_SIZE = 88
+VAL_BATCH_SIZE = 44
+ITER_SIZE = 4
 TRAIN_EPOCHS = [60, 10]
 COOLDOWN = [False, True]
 BASE_LR = 3e-4
-NUM_WORKERS = 2
+NUM_WORKERS = 4
 USE_AMP = True
 USE_EMA = True
-DEVICES = ['cuda:0', 'cuda:1', 'cuda:2', 'cuda:3']
+DEVICES = ['cuda']
 
 
 def get_lr(base_lr, batch_size):
@@ -61,7 +62,8 @@ PARAMS = {
         'ohem_rate': 1.0
     }),
     'optimizer': ('AdamW', {'lr': get_lr(BASE_LR, BATCH_SIZE)}),
-    'device': DEVICES[0]
+    'device': DEVICES[0],
+    'iter_size': ITER_SIZE
 }
 
 
