@@ -46,12 +46,10 @@ if args.distributed:
     torch.distributed.init_process_group(backend='nccl',
                                          init_method='env://')
 
-torch.backends.cudnn.benchmark = True
-
 FOLD = 0
-BATCH_SIZE = 20
+BATCH_SIZE = 11
 VAL_BATCH_SIZE = 44
-ITER_SIZE = 2
+ITER_SIZE = 1
 TRAIN_EPOCHS = [60, 10]
 COOLDOWN = [False, True]
 BASE_LR = 3e-4
