@@ -7,8 +7,52 @@ from PIL import Image
 
 import torch
 from torch.utils.data import Dataset, BatchSampler
+from torch.utils.data.distributed import DistributedSampler
 
 from src import config
+
+
+class DistributedProxySampler(DistributedSampler):
+    """Sampler that restricts data loading to a subset of input sampler indices.
+
+    It is especially useful in conjunction with
+    :class:`torch.nn.parallel.DistributedDataParallel`. In such case, each
+    process can pass a DistributedSampler instance as a DataLoader sampler,
+    and load a subset of the original dataset that is exclusive to it.
+
+    .. note::
+        Input sampler is assumed to be of constant size.
+
+    Arguments:
+        sampler: Input data sampler.
+        num_replicas (optional): Number of processes participating in
+            distributed training.
+        rank (optional): Rank of the current process within num_replicas.
+    """
+
+    def __init__(self, sampler, num_replicas=None, rank=None):
+        super(DistributedProxySampler, self).__init__(sampler,
+                                                      num_replicas=num_replicas,
+                                                      rank=rank,
+                                                      shuffle=False)
+        self.sampler = sampler
+
+    def __iter__(self):
+        # deterministically shuffle based on epoch
+        torch.manual_seed(self.epoch)
+        indices = list(self.sampler)
+
+        # add extra samples to make it evenly divisible
+        indices += indices[:(self.total_size - len(indices))]
+        if len(indices) != self.total_size:
+            raise RuntimeError("{} vs {}".format(len(indices), self.total_size))
+
+        # subsample
+        indices = indices[self.rank:self.total_size:self.num_replicas]
+        if len(indices) != self.num_samples:
+            raise RuntimeError("{} vs {}".format(len(indices), self.num_samples))
+
+        return iter(indices)
 
 
 def load_image(image_path):
@@ -54,13 +98,11 @@ def get_test_data():
     return test_data
 
 
-class AlaskaBatchSampler(BatchSampler):
-    def __init__(self, dataset, batch_size, train=True, drop_last=True):
+class AlaskaSampler(BatchSampler):
+    def __init__(self, dataset, train=True):
         self.dataset = dataset
-        self.batch_size = batch_size
         self.epoch_size = len(dataset) * len(config.classes)
         self.train = train
-        self.drop_last = drop_last
 
     def get_samples(self):
         samples = []
@@ -78,25 +120,15 @@ class AlaskaBatchSampler(BatchSampler):
         return self.get_samples()
 
     def __iter__(self):
-        batch = []
         if self.train:
             samples = self.train_samples()
         else:
             samples = self.val_samples()
 
-        for sample in samples:
-            batch.append(sample)
-            if len(batch) == self.batch_size:
-                yield batch
-                batch = []
-        if len(batch) > 0 and not self.drop_last:
-            yield batch
+        return iter(samples)
 
     def __len__(self):
-        if self.drop_last:
-            return self.epoch_size // self.batch_size
-        else:
-            return (self.epoch_size + self.batch_size - 1) // self.batch_size
+        return self.epoch_size
 
 
 class AlaskaDataset(Dataset):

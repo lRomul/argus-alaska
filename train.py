@@ -1,7 +1,10 @@
 import os
 import json
+import torch
+import logging
 import argparse
-from subprocess import Popen
+
+from apex.parallel import DistributedDataParallel
 
 from argus.callbacks import (
     LoggingToFile,
@@ -12,7 +15,10 @@ from argus.callbacks import (
 
 from torch.utils.data import DataLoader
 
-from src.datasets import AlaskaDataset, AlaskaBatchSampler, get_folds_data
+from src.datasets import (
+    DistributedProxySampler, AlaskaDataset,
+    AlaskaSampler, get_folds_data
+)
 from src.argus_models import AlaskaModel
 from src.metrics import Accuracy
 from src.transforms import get_transforms
@@ -27,10 +33,23 @@ from src import config
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--experiment', required=True, type=str)
-parser.add_argument('--fold', required=False, type=int)
 parser.add_argument('--pretrain', default='', type=str)
+parser.add_argument("--local_rank", default=0, type=int)
 args = parser.parse_args()
 
+args.distributed = False
+if 'WORLD_SIZE' in os.environ:
+    args.distributed = int(os.environ['WORLD_SIZE']) > 1
+
+if args.distributed:
+    torch.cuda.set_device(args.local_rank)
+
+    torch.distributed.init_process_group(backend='nccl',
+                                         init_method='env://')
+
+torch.backends.cudnn.benchmark = True
+
+FOLD = 0
 BATCH_SIZE = 44
 VAL_BATCH_SIZE = 44
 ITER_SIZE = 4
@@ -41,6 +60,9 @@ NUM_WORKERS = 4
 USE_AMP = True
 USE_EMA = True
 DEVICES = ['cuda']
+
+if args.distributed:
+    assert DEVICES == ['cuda']
 
 
 def get_lr(base_lr, batch_size):
@@ -67,7 +89,8 @@ PARAMS = {
 }
 
 
-def train_fold(save_dir, train_folds, val_folds, pretrain_dir=''):
+def train_fold(save_dir, train_folds, val_folds,
+               local_rank=0, distributed=False, pretrain_dir=''):
     folds_data = get_folds_data()
 
     model = AlaskaModel(PARAMS)
@@ -84,7 +107,10 @@ def train_fold(save_dir, train_folds, val_folds, pretrain_dir=''):
     if USE_AMP:
         initialize_amp(model)
 
-    model.set_device(DEVICES)
+    if distributed:
+        model.nn_module = DistributedDataParallel(model.nn_module)
+    else:
+        model.set_device(DEVICES)
 
     if USE_EMA:
         initialize_ema(model, decay=0.9999)
@@ -104,25 +130,31 @@ def train_fold(save_dir, train_folds, val_folds, pretrain_dir=''):
 
         train_dataset = AlaskaDataset(folds_data, train_folds,
                                       transform=train_transform, mixer=mixer)
-        train_sampler = AlaskaBatchSampler(train_dataset, BATCH_SIZE, train=True)
+        train_sampler = AlaskaSampler(train_dataset, train=True)
         val_dataset = AlaskaDataset(folds_data, val_folds, transform=test_transform)
-        val_sampler = AlaskaBatchSampler(val_dataset, VAL_BATCH_SIZE,
-                                         train=False, drop_last=False)
+        val_sampler = AlaskaSampler(val_dataset, train=False)
 
-        train_loader = DataLoader(train_dataset, batch_sampler=train_sampler,
-                                  num_workers=NUM_WORKERS)
-        val_loader = DataLoader(val_dataset, batch_sampler=val_sampler,
-                                num_workers=NUM_WORKERS)
+        if distributed:
+            train_sampler = DistributedProxySampler(train_sampler)
+            val_sampler = DistributedProxySampler(val_sampler)
 
-        callbacks = [
-            checkpoint(save_dir, monitor='val_weighted_auc', max_saves=10),
-            LoggingToFile(save_dir / 'log.txt'),
-            LoggingToCSV(save_dir / 'log.csv')
-        ]
-        if not cooldown:
-            lr_scheduler = CosineAnnealingLR(T_max=epochs,
-                                             eta_min=get_lr(1e-6, BATCH_SIZE))
-            callbacks.append(lr_scheduler)
+        train_loader = DataLoader(train_dataset, sampler=train_sampler,
+                                  num_workers=NUM_WORKERS, batch_size=BATCH_SIZE)
+        val_loader = DataLoader(val_dataset, sampler=val_sampler,
+                                num_workers=NUM_WORKERS, batch_size=VAL_BATCH_SIZE)
+        if local_rank == 0:
+            callbacks = [
+                checkpoint(save_dir, monitor='val_weighted_auc', max_saves=10),
+                LoggingToFile(save_dir / 'log.txt'),
+                LoggingToCSV(save_dir / 'log.csv')
+            ]
+            if not cooldown:
+                lr_scheduler = CosineAnnealingLR(T_max=epochs,
+                                                 eta_min=get_lr(1e-6, BATCH_SIZE))
+                callbacks.append(lr_scheduler)
+        else:
+            callbacks = None
+            model.logger.setLevel(logging.DEBUG)
 
         metrics = ['weighted_auc', Accuracy('stegano'), Accuracy('quality')]
 
@@ -134,36 +166,26 @@ def train_fold(save_dir, train_folds, val_folds, pretrain_dir=''):
 
 
 if __name__ == "__main__":
-    if args.fold is None:
-        for fold in config.folds:
-            command = [
-                'python',
-                os.path.abspath(__file__),
-                '--experiment', args.experiment,
-                '--fold', str(fold)
-            ]
-            pipe = Popen(command)
-            pipe.wait()
-    elif args.fold in config.folds:
-        save_dir = config.experiments_dir / args.experiment
-        if not save_dir.exists():
-            save_dir.mkdir(parents=True, exist_ok=True)
+    save_dir = config.experiments_dir / args.experiment
+    if not save_dir.exists():
+        save_dir.mkdir(parents=True, exist_ok=True)
 
-        with open(save_dir / 'source.py', 'w') as outfile:
-            outfile.write(open(__file__).read())
+    with open(save_dir / 'source.py', 'w') as outfile:
+        outfile.write(open(__file__).read())
 
-        print("Model params", PARAMS)
-        with open(save_dir / 'params.json', 'w') as outfile:
-            json.dump(PARAMS, outfile)
+    print("Model params", PARAMS)
+    with open(save_dir / 'params.json', 'w') as outfile:
+        json.dump(PARAMS, outfile)
 
-        val_folds = [args.fold]
-        train_folds = list(set(config.folds) - set(val_folds))
-        save_fold_dir = save_dir / f'fold_{args.fold}'
-        print(f"Val folds: {val_folds}, Train folds: {train_folds}")
-        print(f"Fold save dir {save_fold_dir}")
+    val_folds = [FOLD]
+    train_folds = list(set(config.folds) - set(val_folds))
+    save_fold_dir = save_dir / f'fold_{FOLD}'
+    print(f"Val folds: {val_folds}, Train folds: {train_folds}")
+    print(f"Fold save dir {save_fold_dir}")
 
-        pretrain_dir = ''
-        if args.pretrain:
-            pretrain_dir = config.experiments_dir / args.pretrain / f'fold_{args.fold}'
+    pretrain_dir = ''
+    if args.pretrain:
+        pretrain_dir = config.experiments_dir / args.pretrain / f'fold_{FOLD}'
 
-        train_fold(save_fold_dir, train_folds, val_folds, pretrain_dir)
+    train_fold(save_fold_dir, train_folds, val_folds,
+               args.local_rank, args.distributed, pretrain_dir)
