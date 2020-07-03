@@ -4,16 +4,16 @@ import torch
 import logging
 import argparse
 
-from apex.parallel import DistributedDataParallel
+from torch.utils.data import DataLoader
+from torch.nn.parallel import DistributedDataParallel
 
+import argus
 from argus.callbacks import (
     LoggingToFile,
     MonitorCheckpoint,
     CosineAnnealingLR,
     LoggingToCSV
 )
-
-from torch.utils.data import DataLoader
 
 from src.datasets import (
     DistributedProxySampler, AlaskaDataset,
@@ -27,7 +27,7 @@ from src.utils import (
     get_best_model_path, load_pretrain_weigths
 )
 from src.ema import EmaMonitorCheckpoint
-from src.mixers import BitMix
+from src.mixers import BitMix, EmptyMix, RandomMixer
 from src import config
 
 
@@ -43,7 +43,6 @@ if 'WORLD_SIZE' in os.environ:
 
 if args.distributed:
     torch.cuda.set_device(args.local_rank)
-
     torch.distributed.init_process_group(backend='nccl',
                                          init_method='env://')
 
@@ -108,7 +107,10 @@ def train_fold(save_dir, train_folds, val_folds,
         initialize_amp(model)
 
     if distributed:
-        model.nn_module = DistributedDataParallel(model.nn_module)
+        model.nn_module = DistributedDataParallel(model.nn_module,
+                                                  device_ids=[local_rank])
+        if local_rank:
+            model.logger.setLevel(logging.DEBUG)
     else:
         model.set_device(DEVICES)
 
@@ -122,7 +124,7 @@ def train_fold(save_dir, train_folds, val_folds,
         test_transform = get_transforms(train=False)
 
         if not cooldown:
-            mixer = BitMix(gamma=0.25)
+            mixer = RandomMixer([BitMix(gamma=0.25), EmptyMix()], p=[0., 1.])
             train_transform = get_transforms(train=True)
         else:
             mixer = None
@@ -136,25 +138,33 @@ def train_fold(save_dir, train_folds, val_folds,
 
         if distributed:
             train_sampler = DistributedProxySampler(train_sampler)
-            val_sampler = DistributedProxySampler(val_sampler)
 
         train_loader = DataLoader(train_dataset, sampler=train_sampler,
                                   num_workers=NUM_WORKERS, batch_size=BATCH_SIZE)
         val_loader = DataLoader(val_dataset, sampler=val_sampler,
                                 num_workers=NUM_WORKERS, batch_size=VAL_BATCH_SIZE)
+
+        callbacks = []
         if local_rank == 0:
-            callbacks = [
+            callbacks += [
                 checkpoint(save_dir, monitor='val_weighted_auc', max_saves=10),
                 LoggingToFile(save_dir / 'log.txt'),
                 LoggingToCSV(save_dir / 'log.csv')
             ]
-            if not cooldown:
-                lr_scheduler = CosineAnnealingLR(T_max=epochs,
-                                                 eta_min=get_lr(1e-6, BATCH_SIZE))
-                callbacks.append(lr_scheduler)
-        else:
-            callbacks = None
-            model.logger.setLevel(logging.DEBUG)
+
+        if not cooldown:
+            callbacks += [
+                CosineAnnealingLR(T_max=epochs,
+                                  eta_min=get_lr(1e-6, BATCH_SIZE))
+            ]
+
+        if mixer is not None:
+            @argus.callbacks.on_epoch_start
+            def schedule_mixer_prob(state):
+                bitmix_prob = state.epoch / epochs
+                mixer.p = [bitmix_prob, 1 - bitmix_prob]
+                state.logger.info(f"Mixer probabilities {mixer.p}")
+            callbacks += [schedule_mixer_prob]
 
         metrics = ['weighted_auc', Accuracy('stegano'), Accuracy('quality')]
 

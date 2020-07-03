@@ -67,3 +67,34 @@ class BitMix:
         stegano_target = mix_target(cover_trg, stegano_trg, 1 - lmb)
         stegano_sample = Image.fromarray(stegano_img), stegano_target
         return cover_sample, stegano_sample
+
+
+class EmptyMix:
+    def __call__(self, cover_sample, stegano_sample):
+        cover_img, cover_trg = cover_sample
+        cover_img = np.array(cover_img).copy()
+        stegano_img, stegano_trg = stegano_sample
+        stegano_img = np.array(stegano_img).copy()
+
+        diff = np.sum(cover_img != stegano_img)
+
+        cover_target = mix_target(cover_trg, cover_trg, 1)
+        cover_sample = Image.fromarray(cover_img), cover_target
+
+        if not diff:
+            return cover_sample, cover_sample
+
+        stegano_target = mix_target(cover_trg, stegano_trg, 0)
+        stegano_sample = Image.fromarray(stegano_img), stegano_target
+
+        return cover_sample, stegano_sample
+
+
+class RandomMixer:
+    def __init__(self, mixers, p=None):
+        self.mixers = mixers
+        self.p = p
+
+    def __call__(self, cover_sample, stegano_sample):
+        mixer = np.random.choice(self.mixers, p=self.p)
+        return mixer(cover_sample, stegano_sample)
