@@ -51,7 +51,7 @@ torch.backends.cudnn.benchmark = True
 FOLD = 0
 BATCH_SIZE = 44
 VAL_BATCH_SIZE = 44
-ITER_SIZE = 4
+ITER_SIZE = 1
 TRAIN_EPOCHS = [60, 10]
 COOLDOWN = [False, True]
 BASE_LR = 3e-4
@@ -183,15 +183,17 @@ if __name__ == "__main__":
     with open(save_dir / 'source.py', 'w') as outfile:
         outfile.write(open(__file__).read())
 
-    print("Model params", PARAMS)
     with open(save_dir / 'params.json', 'w') as outfile:
         json.dump(PARAMS, outfile)
 
     val_folds = [FOLD]
     train_folds = list(set(config.folds) - set(val_folds))
     save_fold_dir = save_dir / f'fold_{FOLD}'
-    print(f"Val folds: {val_folds}, Train folds: {train_folds}")
-    print(f"Fold save dir {save_fold_dir}")
+
+    if args.local_rank == 0:
+        print("Model params", PARAMS)
+        print(f"Val folds: {val_folds}, Train folds: {train_folds}")
+        print(f"Fold save dir {save_fold_dir}")
 
     pretrain_dir = ''
     if args.pretrain:
