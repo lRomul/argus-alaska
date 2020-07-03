@@ -49,7 +49,7 @@ if args.distributed:
 torch.backends.cudnn.benchmark = True
 
 FOLD = 0
-BATCH_SIZE = 44
+BATCH_SIZE = 11
 VAL_BATCH_SIZE = 44
 ITER_SIZE = 1
 TRAIN_EPOCHS = [60, 10]
