@@ -1,9 +1,9 @@
 import os
 import json
 import torch
-import logging
 import argparse
 
+import torch.distributed as dist
 from torch.utils.data import DataLoader
 from torch.nn.parallel import DistributedDataParallel
 
@@ -65,6 +65,8 @@ if args.distributed:
 
 
 def get_lr(base_lr, batch_size):
+    if args.distributed:
+        batch_size = batch_size * dist.get_world_size()
     return base_lr * (batch_size / 16)
 
 
