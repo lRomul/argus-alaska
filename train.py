@@ -49,9 +49,9 @@ if args.distributed:
 torch.backends.cudnn.benchmark = True
 
 FOLD = 0
-BATCH_SIZE = 11
+BATCH_SIZE = 20
 VAL_BATCH_SIZE = 44
-ITER_SIZE = 1
+ITER_SIZE = 2
 TRAIN_EPOCHS = [60, 10]
 COOLDOWN = [False, True]
 BASE_LR = 3e-4
@@ -110,7 +110,7 @@ def train_fold(save_dir, train_folds, val_folds,
         model.nn_module = DistributedDataParallel(model.nn_module,
                                                   device_ids=[local_rank])
         if local_rank:
-            model.logger.setLevel(logging.DEBUG)
+            model.logger.disabled = True
     else:
         model.set_device(DEVICES)
 
