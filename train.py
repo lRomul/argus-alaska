@@ -62,8 +62,8 @@ if args.distributed:
     assert DEVICES == ['cuda']
 
 
-def get_lr(base_lr, batch_size):
-    if args.distributed:
+def get_lr(base_lr, batch_size, distributed):
+    if distributed:
         batch_size = batch_size * dist.get_world_size()
     return base_lr * (batch_size / 16)
 
@@ -82,7 +82,11 @@ PARAMS = {
         'smooth_factor': 0.05,
         'ohem_rate': 1.0
     }),
-    'optimizer': ('AdamW', {'lr': get_lr(BASE_LR, BATCH_SIZE)}),
+    'optimizer': ('AdamW', {
+        'lr': get_lr(BASE_LR,
+                     BATCH_SIZE,
+                     args.distributed)
+    }),
     'device': DEVICES[0],
     'iter_size': ITER_SIZE
 }
@@ -156,7 +160,7 @@ def train_fold(save_dir, train_folds, val_folds,
         if not cooldown:
             callbacks += [
                 CosineAnnealingLR(T_max=epochs,
-                                  eta_min=get_lr(1e-6, BATCH_SIZE))
+                                  eta_min=get_lr(1e-6, BATCH_SIZE, distributed))
             ]
 
         if mixer is not None:
