@@ -47,9 +47,9 @@ if args.distributed:
                                          init_method='env://')
 
 FOLD = 0
-BATCH_SIZE = 11
+BATCH_SIZE = 12
 VAL_BATCH_SIZE = 44
-ITER_SIZE = 1
+ITER_SIZE = 2
 TRAIN_EPOCHS = [60, 10]
 COOLDOWN = [False, True]
 BASE_LR = 3e-4
@@ -70,9 +70,9 @@ def get_lr(base_lr, batch_size, distributed):
 
 PARAMS = {
     'nn_module': ('TimmModel', {
-        'encoder': 'tf_efficientnet_b5_ns',
+        'encoder': 'tf_efficientnet_b6_ns',
         'pretrained': True,
-        'drop_rate': 0.4,
+        'drop_rate': 0.5,
         'drop_path_rate': 0.2,
     }),
     'loss': ('AlaskaCrossEntropy', {
