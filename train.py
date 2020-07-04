@@ -12,6 +12,7 @@ from argus.callbacks import (
     LoggingToFile,
     MonitorCheckpoint,
     CosineAnnealingLR,
+    LambdaLR,
     LoggingToCSV
 )
 
@@ -50,8 +51,8 @@ FOLD = 0
 BATCH_SIZE = 12
 VAL_BATCH_SIZE = 44
 ITER_SIZE = 2
-TRAIN_EPOCHS = [60, 10]
-COOLDOWN = [False, True]
+TRAIN_EPOCHS = [3, 60, 10]
+STAGE = ['warmup', 'train', 'cooldown']
 BASE_LR = 3e-4
 NUM_WORKERS = 4
 USE_AMP = True
@@ -124,10 +125,10 @@ def train_fold(save_dir, train_folds, val_folds,
     else:
         checkpoint = MonitorCheckpoint
 
-    for epochs, cooldown in zip(TRAIN_EPOCHS, COOLDOWN):
+    for epochs, stage in zip(TRAIN_EPOCHS, STAGE):
         test_transform = get_transforms(train=False)
 
-        if not cooldown:
+        if stage == 'train':
             mixer = RandomMixer([BitMix(gamma=0.25), EmptyMix()], p=[0., 1.])
             train_transform = get_transforms(train=True)
         else:
@@ -154,13 +155,18 @@ def train_fold(save_dir, train_folds, val_folds,
             callbacks += [
                 checkpoint(save_dir, monitor='val_weighted_auc', max_saves=10),
                 LoggingToFile(save_dir / 'log.txt'),
-                LoggingToCSV(save_dir / 'log.csv')
+                LoggingToCSV(save_dir / 'log.csv', append=True)
             ]
 
-        if not cooldown:
+        if stage == 'train':
             callbacks += [
                 CosineAnnealingLR(T_max=epochs,
                                   eta_min=get_lr(1e-6, BATCH_SIZE, distributed))
+            ]
+        elif stage == 'warmup':
+            callbacks += [
+                LambdaLR(lambda x: (x / (epochs * len(train_sampler))) * model.get_lr(),
+                         step_on_iteration=True)
             ]
 
         if mixer is not None:
