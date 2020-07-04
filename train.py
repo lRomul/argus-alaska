@@ -16,7 +16,7 @@ from argus.callbacks import (
 )
 
 from src.datasets import (
-    DistributedProxySampler, AlaskaDataset,
+    AlaskaDistributedSampler, AlaskaDataset,
     AlaskaSampler, get_folds_data
 )
 from src.argus_models import AlaskaModel
@@ -132,12 +132,13 @@ def train_fold(save_dir, train_folds, val_folds,
 
         train_dataset = AlaskaDataset(folds_data, train_folds,
                                       transform=train_transform, mixer=mixer)
-        train_sampler = AlaskaSampler(train_dataset, train=True)
         val_dataset = AlaskaDataset(folds_data, val_folds, transform=test_transform)
         val_sampler = AlaskaSampler(val_dataset, train=False)
 
         if distributed:
-            train_sampler = DistributedProxySampler(train_sampler)
+            train_sampler = AlaskaDistributedSampler(train_dataset)
+        else:
+            train_sampler = AlaskaSampler(train_dataset, train=True)
 
         train_loader = DataLoader(train_dataset, sampler=train_sampler,
                                   num_workers=NUM_WORKERS, batch_size=BATCH_SIZE)
@@ -166,7 +167,17 @@ def train_fold(save_dir, train_folds, val_folds,
                 state.logger.info(f"Mixer probabilities {mixer.p}")
             callbacks += [schedule_mixer_prob]
 
-        metrics = ['weighted_auc', Accuracy('stegano'), Accuracy('quality')]
+        if distributed:
+            @argus.callbacks.on_epoch_complete
+            def schedule_sampler(state):
+                train_sampler.set_epoch(state.epoch + 1)
+            callbacks += [schedule_sampler]
+
+        if local_rank == 0:
+            metrics = ['weighted_auc', Accuracy('stegano'), Accuracy('quality')]
+        else:
+            metrics = None
+            val_loader = None
 
         model.fit(train_loader,
                   val_loader=val_loader,
