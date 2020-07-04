@@ -32,7 +32,7 @@ class AlaskaDistributedSampler(Sampler):
 
     def get_samples(self):
         samples = []
-        for idx in range(len(self.dataset)):
+        for idx in range(len(self.dataset.data)):
             for cls in config.classes:
                 samples.append((idx, cls))
         return samples
@@ -108,12 +108,12 @@ def get_test_data():
 class AlaskaSampler(Sampler):
     def __init__(self, dataset, train=True):
         self.dataset = dataset
-        self.epoch_size = len(dataset) * len(config.classes)
+        self.epoch_size = len(dataset.data) * len(config.classes)
         self.train = train
 
     def get_samples(self):
         samples = []
-        for idx in range(len(self.dataset)):
+        for idx in range(len(self.dataset.data)):
             for cls in config.classes:
                 samples.append((idx, cls))
         return samples
@@ -156,7 +156,7 @@ class AlaskaDataset(Dataset):
             self.data = [s for s in self.data if s['fold'] in folds]
 
     def __len__(self):
-        return len(self.data)
+        return len(self.data) * len(config.classes)
 
     def get_sample(self, idx):
         if isinstance(idx, (tuple, list)):
