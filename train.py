@@ -173,11 +173,7 @@ def train_fold(save_dir, train_folds, val_folds,
                 train_sampler.set_epoch(state.epoch + 1)
             callbacks += [schedule_sampler]
 
-        if local_rank == 0:
-            metrics = ['weighted_auc', Accuracy('stegano'), Accuracy('quality')]
-        else:
-            metrics = None
-            val_loader = None
+        metrics = ['weighted_auc', Accuracy('stegano'), Accuracy('quality')]
 
         model.fit(train_loader,
                   val_loader=val_loader,
