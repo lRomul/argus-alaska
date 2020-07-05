@@ -64,6 +64,7 @@ if args.distributed:
     WORLD_BATCH_SIZE = BATCH_SIZE * dist.get_world_size()
 else:
     WORLD_BATCH_SIZE = BATCH_SIZE
+print("World batch size:", WORLD_BATCH_SIZE)
 
 
 def get_lr(base_lr, batch_size):
@@ -164,10 +165,9 @@ def train_fold(save_dir, train_folds, val_folds,
                                   eta_min=get_lr(1e-6, WORLD_BATCH_SIZE))
             ]
         elif stage == 'warmup':
-            base_lr = model.get_lr()
-            warmup_iterations = (epochs * len(train_sampler)) / WORLD_BATCH_SIZE
+            warmup_iterations = epochs * (len(train_sampler) / WORLD_BATCH_SIZE)
             callbacks += [
-                LambdaLR(lambda x: (x / warmup_iterations) * base_lr,
+                LambdaLR(lambda x: x / warmup_iterations,
                          step_on_iteration=True)
             ]
 
