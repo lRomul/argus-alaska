@@ -61,11 +61,12 @@ DEVICES = ['cuda']
 
 if args.distributed:
     assert DEVICES == ['cuda']
+    WORLD_BATCH_SIZE = BATCH_SIZE * dist.get_world_size()
+else:
+    WORLD_BATCH_SIZE = BATCH_SIZE
 
 
-def get_lr(base_lr, batch_size, distributed):
-    if distributed:
-        batch_size = batch_size * dist.get_world_size()
+def get_lr(base_lr, batch_size):
     return base_lr * (batch_size / 16)
 
 
@@ -84,9 +85,7 @@ PARAMS = {
         'ohem_rate': 1.0
     }),
     'optimizer': ('AdamW', {
-        'lr': get_lr(BASE_LR,
-                     BATCH_SIZE,
-                     args.distributed)
+        'lr': get_lr(BASE_LR, WORLD_BATCH_SIZE)
     }),
     'device': DEVICES[0],
     'iter_size': ITER_SIZE
@@ -162,12 +161,13 @@ def train_fold(save_dir, train_folds, val_folds,
         if stage == 'train':
             callbacks += [
                 CosineAnnealingLR(T_max=epochs,
-                                  eta_min=get_lr(1e-6, BATCH_SIZE, distributed))
+                                  eta_min=get_lr(1e-6, WORLD_BATCH_SIZE))
             ]
         elif stage == 'warmup':
             base_lr = model.get_lr()
+            warmup_iterations = (epochs * len(train_sampler)) / WORLD_BATCH_SIZE
             callbacks += [
-                LambdaLR(lambda x: (x / (epochs * len(train_sampler))) * base_lr,
+                LambdaLR(lambda x: (x / warmup_iterations) * base_lr,
                          step_on_iteration=True)
             ]
 
