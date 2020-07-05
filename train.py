@@ -4,6 +4,7 @@ import torch
 import argparse
 
 import torch.distributed as dist
+from torch.nn import SyncBatchNorm
 from torch.utils.data import DataLoader
 from torch.nn.parallel import DistributedDataParallel
 
@@ -112,6 +113,7 @@ def train_fold(save_dir, train_folds, val_folds,
         initialize_amp(model)
 
     if distributed:
+        model.nn_module = SyncBatchNorm.convert_sync_batchnorm(model.nn_module)
         model.nn_module = DistributedDataParallel(model.nn_module,
                                                   device_ids=[local_rank])
         if local_rank:
