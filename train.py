@@ -48,7 +48,7 @@ if args.distributed:
                                          init_method='env://')
 
 FOLD = 0
-BATCH_SIZE = 12
+BATCH_SIZE = 16
 VAL_BATCH_SIZE = 44
 ITER_SIZE = 2
 TRAIN_EPOCHS = [3, 60, 10]
@@ -153,7 +153,8 @@ def train_fold(save_dir, train_folds, val_folds,
         callbacks = []
         if local_rank == 0:
             callbacks += [
-                checkpoint(save_dir, monitor='val_weighted_auc', max_saves=10),
+                checkpoint(save_dir, monitor='val_weighted_auc', max_saves=10,
+                           file_format=stage + '-model-{epoch:03d}-{monitor:.6f}.pth'),
                 LoggingToFile(save_dir / 'log.txt'),
                 LoggingToCSV(save_dir / 'log.csv', append=True)
             ]
@@ -164,8 +165,9 @@ def train_fold(save_dir, train_folds, val_folds,
                                   eta_min=get_lr(1e-6, BATCH_SIZE, distributed))
             ]
         elif stage == 'warmup':
+            base_lr = model.get_lr()
             callbacks += [
-                LambdaLR(lambda x: (x / (epochs * len(train_sampler))) * model.get_lr(),
+                LambdaLR(lambda x: (x / (epochs * len(train_sampler))) * base_lr,
                          step_on_iteration=True)
             ]
 
