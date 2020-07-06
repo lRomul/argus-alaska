@@ -156,7 +156,10 @@ class AlaskaDataset(Dataset):
             self.data = [s for s in self.data if s['fold'] in folds]
 
     def __len__(self):
-        return len(self.data) * len(config.classes)
+        if self.target:
+            return len(self.data) * len(config.classes)
+        else:
+            return len(self.data)
 
     def get_sample(self, idx):
         if isinstance(idx, (tuple, list)):
