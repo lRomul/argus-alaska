@@ -81,7 +81,7 @@ PARAMS = {
     }),
     'loss': ('AlaskaCrossEntropy', {
         'stegano_weight': 1.0,
-        'altered_weight': 1.0,
+        'altered_weight': 0.0,
         'quality_weight': 0.05,
         'smooth_factor': 0.05,
         'ohem_rate': 1.0
@@ -164,7 +164,7 @@ def train_fold(save_dir, train_folds, val_folds,
         if stage == 'train':
             callbacks += [
                 CosineAnnealingLR(T_max=epochs,
-                                  eta_min=get_lr(1e-6, WORLD_BATCH_SIZE))
+                                  eta_min=get_lr(3e-6, WORLD_BATCH_SIZE))
             ]
         elif stage == 'warmup':
             warmup_iterations = epochs * (len(train_sampler) / WORLD_BATCH_SIZE)
