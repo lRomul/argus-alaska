@@ -32,6 +32,8 @@ from src.ema import EmaMonitorCheckpoint
 from src.mixers import BitMix, EmptyMix, RandomMixer
 from src import config
 
+torch.backends.cudnn.benchmark = True
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--experiment', required=True, type=str)
@@ -49,10 +51,10 @@ if args.distributed:
                                          init_method='env://')
 
 FOLD = 0
-BATCH_SIZE = 16
-VAL_BATCH_SIZE = 44
-ITER_SIZE = 2
-TRAIN_EPOCHS = [3, 60, 10]
+BATCH_SIZE = 10
+VAL_BATCH_SIZE = 40
+ITER_SIZE = 1
+TRAIN_EPOCHS = [3, 120, 10]
 STAGE = ['warmup', 'train', 'cooldown']
 BASE_LR = 3e-4
 NUM_WORKERS = 4
@@ -74,9 +76,9 @@ def get_lr(base_lr, batch_size):
 
 PARAMS = {
     'nn_module': ('TimmModel', {
-        'encoder': 'tf_efficientnet_b6_ns',
+        'encoder': 'tf_efficientnet_b5_ns',
         'pretrained': True,
-        'drop_rate': 0.5,
+        'drop_rate': 0.4,
         'drop_path_rate': 0.2,
     }),
     'loss': ('AlaskaCrossEntropy', {
