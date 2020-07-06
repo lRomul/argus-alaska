@@ -73,12 +73,14 @@ class AlaskaCrossEntropy(nn.Module):
         self.smooth_factor = smooth_factor
         self.ohem_rate = ohem_rate
 
+        self.stegano_softmax = not bool(self.altered_weight)
+
         self.stegano_ce = SmoothingOhemCrossEntropy(smooth_factor=smooth_factor,
                                                     ohem_rate=ohem_rate,
-                                                    softmax=False)
+                                                    softmax=self.stegano_softmax)
         self.altered_ce = SmoothingOhemCrossEntropy(smooth_factor=smooth_factor,
                                                     ohem_rate=ohem_rate,
-                                                    softmax=False)
+                                                    softmax=self.stegano_softmax)
         self.quality_ce = SmoothingOhemCrossEntropy(smooth_factor=smooth_factor,
                                                     ohem_rate=ohem_rate,
                                                     softmax=True)
@@ -87,7 +89,8 @@ class AlaskaCrossEntropy(nn.Module):
         stegano_pred, quality_pred = pred
         stegano_target, quality_target = target
 
-        stegano_pred = F.softmax(stegano_pred, dim=-1)
+        if not self.stegano_softmax:
+            stegano_pred = F.softmax(stegano_pred, dim=-1)
 
         loss = 0
         if self.stegano_weight:
