@@ -51,9 +51,9 @@ if args.distributed:
                                          init_method='env://')
 
 FOLD = 0
-BATCH_SIZE = 10
+BATCH_SIZE = 20
 VAL_BATCH_SIZE = 40
-ITER_SIZE = 1
+ITER_SIZE = 2
 TRAIN_EPOCHS = [3, 120, 10]
 STAGE = ['warmup', 'train', 'cooldown']
 BASE_LR = 3e-4
