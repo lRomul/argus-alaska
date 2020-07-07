@@ -51,8 +51,8 @@ if args.distributed:
                                          init_method='env://')
 
 FOLD = 0
-BATCH_SIZE = 12
-VAL_BATCH_SIZE = 24
+BATCH_SIZE = 16
+VAL_BATCH_SIZE = 32
 ITER_SIZE = 2
 TRAIN_EPOCHS = [3, 90, 10]
 STAGE = ['warmup', 'train', 'cooldown']
@@ -76,7 +76,7 @@ def get_lr(base_lr, batch_size):
 
 PARAMS = {
     'nn_module': ('TimmModel', {
-        'encoder': 'tf_efficientnet_b7_ns',
+        'encoder': 'tf_efficientnet_b6_ns',
         'pretrained': True,
         'drop_rate': 0.5,
         'drop_path_rate': 0.2,

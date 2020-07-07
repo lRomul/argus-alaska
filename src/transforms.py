@@ -22,7 +22,7 @@ def get_transforms(train):
     if train:
         trns = transforms.Compose([
             transforms.RandomHorizontalFlip(),
-            transforms.RandomVerticalFlip(),
+            RandomRotate90(),
             transforms.ToTensor(),
             transforms.Normalize(mean, std)
         ])
