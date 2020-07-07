@@ -29,7 +29,7 @@ from src.utils import (
     get_best_model_path, load_pretrain_weigths
 )
 from src.ema import EmaMonitorCheckpoint
-from src.mixers import BitMix, EmptyMix, RandomMixer
+from src.mixers import EmptyMix
 from src import config
 
 torch.backends.cudnn.benchmark = True
@@ -51,10 +51,10 @@ if args.distributed:
                                          init_method='env://')
 
 FOLD = 0
-BATCH_SIZE = 20
-VAL_BATCH_SIZE = 40
+BATCH_SIZE = 12
+VAL_BATCH_SIZE = 24
 ITER_SIZE = 2
-TRAIN_EPOCHS = [3, 120, 10]
+TRAIN_EPOCHS = [3, 90, 10]
 STAGE = ['warmup', 'train', 'cooldown']
 BASE_LR = 3e-4
 NUM_WORKERS = 4
@@ -76,16 +76,16 @@ def get_lr(base_lr, batch_size):
 
 PARAMS = {
     'nn_module': ('TimmModel', {
-        'encoder': 'tf_efficientnet_b5_ns',
+        'encoder': 'tf_efficientnet_b7_ns',
         'pretrained': True,
-        'drop_rate': 0.4,
+        'drop_rate': 0.5,
         'drop_path_rate': 0.2,
     }),
     'loss': ('AlaskaCrossEntropy', {
         'stegano_weight': 1.0,
         'altered_weight': 0.0,
         'quality_weight': 0.05,
-        'smooth_factor': 0.05,
+        'smooth_factor': 0.01,
         'ohem_rate': 1.0
     }),
     'optimizer': ('AdamW', {
@@ -133,14 +133,13 @@ def train_fold(save_dir, train_folds, val_folds,
         test_transform = get_transforms(train=False)
 
         if stage == 'train':
-            mixer = RandomMixer([BitMix(gamma=0.25), EmptyMix()], p=[0., 1.])
             train_transform = get_transforms(train=True)
         else:
-            mixer = None
             train_transform = get_transforms(train=False)
 
         train_dataset = AlaskaDataset(folds_data, train_folds,
-                                      transform=train_transform, mixer=mixer)
+                                      transform=train_transform,
+                                      mixer=EmptyMix())
         val_dataset = AlaskaDataset(folds_data, val_folds, transform=test_transform)
         val_sampler = AlaskaSampler(val_dataset, train=False)
 
@@ -174,14 +173,6 @@ def train_fold(save_dir, train_folds, val_folds,
                 LambdaLR(lambda x: x / warmup_iterations,
                          step_on_iteration=True)
             ]
-
-        if mixer is not None:
-            @argus.callbacks.on_epoch_start
-            def schedule_mixer_prob(state):
-                bitmix_prob = state.epoch / epochs
-                mixer.p = [bitmix_prob, 1 - bitmix_prob]
-                state.logger.info(f"Mixer probabilities {mixer.p}")
-            callbacks += [schedule_mixer_prob]
 
         if distributed:
             @argus.callbacks.on_epoch_complete
