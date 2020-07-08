@@ -51,14 +51,14 @@ if args.distributed:
                                          init_method='env://')
 
 FOLD = 0
-BATCH_SIZE = 32
+BATCH_SIZE = 10
 VAL_BATCH_SIZE = 32
-ITER_SIZE = 4
-TRAIN_EPOCHS = [3, 90, 10]
+ITER_SIZE = 2
+TRAIN_EPOCHS = [3, 70, 10]
 STAGE = ['warmup', 'train', 'cooldown']
 BASE_LR = 3e-4
 NUM_WORKERS = 4
-USE_AMP = True
+USE_AMP = False
 USE_EMA = True
 DEVICES = ['cuda']
 
