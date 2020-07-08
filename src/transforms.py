@@ -1,7 +1,30 @@
+import random
 import numpy as np
 from PIL import Image
 
 from torchvision import transforms
+
+
+class UseWithProb:
+    def __init__(self, transform, prob=.5):
+        self.transform = transform
+        self.prob = prob
+
+    def __call__(self, image, trg=None):
+        if random.random() < self.prob:
+            image = self.transform(image)
+        return image
+
+
+class OneOf:
+    def __init__(self, transforms, p=None):
+        self.transforms = transforms
+        self.p = p
+
+    def __call__(self, image, trg=None):
+        transform = np.random.choice(self.transforms, p=self.p)
+        image = transform(image)
+        return image
 
 
 class RandomRotate90:
@@ -21,8 +44,10 @@ def get_transforms(train):
     std = [0.229, 0.224, 0.225]
     if train:
         trns = transforms.Compose([
-            transforms.RandomHorizontalFlip(),
-            RandomRotate90(),
+            UseWithProb(OneOf([
+                transforms.RandomHorizontalFlip(p=1.0),
+                transforms.RandomVerticalFlip(p=1.0)
+            ]), prob=0.5),
             transforms.ToTensor(),
             transforms.Normalize(mean, std)
         ])
