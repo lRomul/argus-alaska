@@ -1,16 +1,9 @@
-import os
 from pathlib import Path
 
-kernel_mode = False
-if 'KERNEL_MODE' in os.environ and os.environ['KERNEL_MODE'] == 'tpu':
-    kernel_mode = True
-
-if kernel_mode:
-    input_data_dir = Path('/kaggle/input/alaska2-image-steganalysis/')
-    output_data_dir = Path('/kaggle/working/')
-else:
-    input_data_dir = Path('/workdir/data/')
-    output_data_dir = Path('/workdir/data/')
+input_data_dir = Path('/kaggle/input/alaska2-image-steganalysis/')
+output_data_dir = Path('/kaggle/working/')
+# input_data_dir = Path('/workdir/data/')
+# output_data_dir = Path('/workdir/data/')
 
 cover_dir = input_data_dir / 'Cover'
 jmipod_dir = input_data_dir / 'JMiPOD'
