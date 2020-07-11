@@ -33,6 +33,7 @@ class AlaskaModel(Model):
         super().__init__(params)
         self.amp = None
         self.model_ema = None
+        self.xm = None
 
         if 'iter_size' not in self.params:
             self.params['iter_size'] = 1
@@ -54,9 +55,11 @@ class AlaskaModel(Model):
             else:
                 loss.backward()
 
-        self.optimizer.step()
+        if self.xm is None:
+            self.optimizer.step()
+        else:
+            self.xm.optimizer_step(self.optimizer)
 
-        torch.cuda.synchronize()
         if self.model_ema is not None:
             with torch.no_grad():
                 self.model_ema.update(self.nn_module)
