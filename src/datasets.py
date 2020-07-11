@@ -84,7 +84,7 @@ def get_folds_data(quality=True):
             sample['quality'] = quality_dict[name]
 
         for cls, trg in config.class2target.items():
-            image_path = config.data_dir / cls / name
+            image_path = config.input_data_dir / cls / name
             sample[cls] = {
                 'image_path': str(image_path),
                 'target': trg
