@@ -27,13 +27,12 @@ from src.utils import get_best_model_path, load_pretrain_weigths
 from src.mixers import EmptyMix
 from src import config
 
-
 EXPERIMENT = 'test_tpu_001'
 PRETRAIN = ''
 FOLD = 0
-BATCH_SIZE = 21
-VAL_BATCH_SIZE = 32
-ITER_SIZE = 3
+BATCH_SIZE = 8
+VAL_BATCH_SIZE = 16
+ITER_SIZE = 1
 TRAIN_EPOCHS = [3, 60, 10]
 STAGE = ['warmup', 'train', 'cooldown']
 BASE_LR = 3e-4
@@ -71,8 +70,7 @@ PARAMS = {
         'lr': get_lr(BASE_LR, WORLD_BATCH_SIZE)
     }),
     'device': 'cpu',
-    'iter_size': ITER_SIZE,
-    'xm': True
+    'iter_size': ITER_SIZE
 }
 
 
