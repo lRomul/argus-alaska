@@ -1,7 +1,7 @@
 from pathlib import Path
 
 input_data_dir = Path('/kaggle/input/alaska2-image-steganalysis/')
-output_data_dir = Path('/kaggle/working/')
+output_data_dir = Path('/kaggle/working/data')
 # input_data_dir = Path('/workdir/data/')
 # output_data_dir = Path('/workdir/data/')
 
