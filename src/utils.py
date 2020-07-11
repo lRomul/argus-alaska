@@ -1,6 +1,5 @@
 import re
 import torch
-import jpegio
 import shutil
 import numpy as np
 from pathlib import Path
@@ -56,6 +55,7 @@ def initialize_ema(model, decay=0.9999, device='', resume=''):
 
 
 def get_image_quality(image_path):
+    import jpegio
     jpeg = jpegio.read(str(image_path))
     first_element = jpeg.quant_tables[0][0, 0]
     if first_element == 2:

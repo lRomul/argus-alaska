@@ -1,10 +1,12 @@
+import os
+os.environ['KERNEL_MODE'] == 'tpu'
+
 import json
 import argparse
 
 import torch
 from torch.utils.data import DataLoader
 
-import torch_xla
 import torch_xla.distributed.parallel_loader as pl
 import torch_xla.core.xla_model as xm
 import torch_xla.distributed.xla_multiprocessing as xmp
@@ -133,7 +135,7 @@ def train_fold(rank, save_dir, train_folds, val_folds, pretrain_dir=''):
         callbacks = []
         if local_rank == 0:
             callbacks += [
-                MonitorCheckpoint(save_dir, monitor='val_weighted_auc', max_saves=10,
+                MonitorCheckpoint(save_dir, monitor='val_weighted_auc', max_saves=1,
                                   file_format=stage + '-model-{epoch:03d}-{monitor:.6f}.pth'),
                 LoggingToFile(save_dir / 'log.txt'),
                 LoggingToCSV(save_dir / 'log.csv', append=True)
