@@ -1,19 +1,28 @@
+import os
 from pathlib import Path
 
+kernel_mode = False
+if 'KERNEL_MODE' in os.environ and os.environ['KERNEL_MODE'] == 'tpu':
+    kernel_mode = True
 
-work_dir = Path('/workdir')
-data_dir = work_dir / 'data'
-cover_dir = data_dir / 'Cover'
-jmipod_dir = data_dir / 'JMiPOD'
-juniward_dir = data_dir / 'JUNIWARD'
-uerd_dir = data_dir / 'UERD'
-sample_submission_path = data_dir / 'sample_submission.csv'
-test_dir = data_dir / 'Test'
+if kernel_mode:
+    input_data_dir = Path('/kaggle/input/alaska2-image-steganalysis/')
+    output_data_dir = Path('/kaggle/working/')
+else:
+    input_data_dir = Path('/workdir/data/')
+    output_data_dir = Path('/workdir/data/')
 
-train_folds_path = data_dir / 'train_folds_v2.csv'
-experiments_dir = data_dir / 'experiments'
-predictions_dir = data_dir / 'predictions'
-quality_json_path = data_dir / 'quality.json'
+cover_dir = input_data_dir / 'Cover'
+jmipod_dir = input_data_dir / 'JMiPOD'
+juniward_dir = input_data_dir / 'JUNIWARD'
+uerd_dir = input_data_dir / 'UERD'
+sample_submission_path = input_data_dir / 'sample_submission.csv'
+test_dir = input_data_dir / 'Test'
+
+train_folds_path = output_data_dir / 'train_folds_v2.csv'
+experiments_dir = output_data_dir / 'experiments'
+predictions_dir = output_data_dir / 'predictions'
+quality_json_path = output_data_dir / 'quality.json'
 classes = ['Cover', 'JMiPOD', 'JUNIWARD', 'UERD']
 unaltered_target = 0
 class2target = {
