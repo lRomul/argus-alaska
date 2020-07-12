@@ -119,11 +119,11 @@ def train_fold(rank, save_dir, train_folds, val_folds, pretrain_dir=''):
 
         train_loader = DataLoader(train_dataset, sampler=train_sampler,
                                   num_workers=NUM_WORKERS, batch_size=BATCH_SIZE)
-        train_loader = pl.ParallelLoader(train_loader, [model.device])
-        train_loader = train_loader.per_device_loader(model.device)
-
         val_loader = DataLoader(val_dataset, sampler=val_sampler,
                                 num_workers=NUM_WORKERS, batch_size=VAL_BATCH_SIZE)
+
+        train_loader = pl.MpDeviceLoader(train_loader, device)
+        val_loader = pl.MpDeviceLoader(val_loader, device)
 
         callbacks = []
         if local_rank == 0:
