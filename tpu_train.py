@@ -37,8 +37,8 @@ TRAIN_EPOCHS = [3, 60, 10]
 STAGE = ['warmup', 'train', 'cooldown']
 BASE_LR = 3e-4
 NUM_WORKERS = 0
-
-WORLD_BATCH_SIZE = BATCH_SIZE * xm.xrt_world_size()
+NPROCS = 8
+WORLD_BATCH_SIZE = BATCH_SIZE * NPROCS
 print("World batch size:", WORLD_BATCH_SIZE)
 
 
@@ -185,5 +185,5 @@ if __name__ == "__main__":
                     train_folds,
                     val_folds,
                     pretrain_dir),
-              nprocs=8,
+              nprocs=NPROCS,
               start_method='fork')
