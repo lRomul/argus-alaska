@@ -18,6 +18,7 @@ PREDICTION_DIR = config.predictions_dir / args.experiment
 DEVICE = 'cuda'
 BATCH_SIZE = 32
 IMAGE_SIZE = None
+LOGITS = True
 
 
 def predict_val_fold(test_data, predictor, fold):
@@ -35,6 +36,11 @@ def predict_val_fold(test_data, predictor, fold):
         quality_pred=quality_pred,
         name=image_names,
     )
+
+    preds_df = pd.DataFrame(index=image_names, columns=config.classes)
+    preds_df.index.name = 'Id'
+    preds_df.values[:] = altered_pred
+    preds_df.to_csv(fold_prediction_dir / f'{PREDICTION_DIR.name}.csv')
 
 
 def blend_folds_submission():
@@ -80,7 +86,8 @@ if __name__ == "__main__":
             predictor = Predictor(model_path,
                                   batch_size=BATCH_SIZE,
                                   transform=transforms,
-                                  device=DEVICE)
+                                  device=DEVICE,
+                                  logits=LOGITS)
 
             print("Val predict")
             predict_val_fold(test_data, predictor, fold)

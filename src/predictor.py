@@ -41,8 +41,11 @@ class Predictor:
                  model_path,
                  batch_size,
                  transform,
-                 device='cuda'):
+                 device='cuda',
+                 logits=False):
         self.model = load_model(model_path, device=device)
+        if logits:
+            self.model.prediction_transform = lambda x: x
         self.batch_size = batch_size
         self.transform = transform
 
