@@ -51,7 +51,7 @@ if args.distributed:
                                          init_method='env://')
 
 FOLD = 0
-BATCH_SIZE = 30
+BATCH_SIZE = 27
 VAL_BATCH_SIZE = 40
 ITER_SIZE = 3
 TRAIN_EPOCHS = [3, 60, 10]
@@ -170,7 +170,7 @@ def train_fold(save_dir, train_folds, val_folds,
                                   eta_min=get_lr(1e-5, WORLD_BATCH_SIZE))
             ]
         elif stage == 'warmup':
-            warmup_iterations = epochs * (len(train_sampler) / WORLD_BATCH_SIZE)
+            warmup_iterations = epochs * (len(train_sampler) / BATCH_SIZE)
             callbacks += [
                 LambdaLR(lambda x: x / warmup_iterations,
                          step_on_iteration=True)
