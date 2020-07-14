@@ -21,7 +21,7 @@ IMAGE_SIZE = None
 LOGITS = True
 
 
-def predict_val_fold(test_data, predictor, fold):
+def predict_test_fold(test_data, predictor, fold):
     fold_prediction_dir = PREDICTION_DIR / f'fold_{fold}' / 'test'
     fold_prediction_dir.mkdir(parents=True, exist_ok=True)
 
@@ -89,8 +89,8 @@ if __name__ == "__main__":
                                   device=DEVICE,
                                   logits=LOGITS)
 
-            print("Val predict")
-            predict_val_fold(test_data, predictor, fold)
+            print("Test predict")
+            predict_test_fold(test_data, predictor, fold)
 
         print("Blend folds predictions")
         blend_folds_submission()
