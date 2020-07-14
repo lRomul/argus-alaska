@@ -5,6 +5,7 @@ import logging
 from copy import deepcopy
 from collections import OrderedDict
 from torch.nn.parallel.data_parallel import DataParallel
+from torch.nn.parallel import DistributedDataParallel
 
 from argus.utils import deep_to
 from argus.engine import State
@@ -76,13 +77,14 @@ class ModelEma:
 class EmaMonitorCheckpoint(MonitorCheckpoint):
 
     def save(self, file_path, argus_state):
-        ema = argus_state.model.model_ema.ema
-        if isinstance(ema, DataParallel):
-            nn_module = ema.module
-        else:
-            nn_module = ema
+        nn_module = argus_state.model.model_ema.ema
+        if isinstance(nn_module, (DataParallel, DistributedDataParallel)):
+            nn_module = nn_module.module
 
         no_ema_nn_module = argus_state.model.get_nn_module()
+        if isinstance(no_ema_nn_module, DistributedDataParallel):
+            no_ema_nn_module = no_ema_nn_module.module
+
         state = {
             'model_name': argus_state.model.__class__.__name__,
             'params': argus_state.model.params,
