@@ -29,7 +29,7 @@ from src.utils import (
     get_best_model_path, load_pretrain_weigths
 )
 from src.ema import EmaMonitorCheckpoint
-from src.mixers import EmptyMix
+from src.mixers import EmptyMix, BitMix
 from src import config
 
 torch.backends.cudnn.benchmark = True
@@ -51,14 +51,14 @@ if args.distributed:
                                          init_method='env://')
 
 FOLD = 0
-BATCH_SIZE = 21
-VAL_BATCH_SIZE = 32
+BATCH_SIZE = 30
+VAL_BATCH_SIZE = 40
 ITER_SIZE = 3
 TRAIN_EPOCHS = [3, 60, 10]
 STAGE = ['warmup', 'train', 'cooldown']
-BASE_LR = 3e-4
+BASE_LR = 1e-4
 NUM_WORKERS = 4
-USE_AMP = False
+USE_AMP = True
 USE_EMA = True
 DEVICES = ['cuda']
 
@@ -132,14 +132,16 @@ def train_fold(save_dir, train_folds, val_folds,
     for epochs, stage in zip(TRAIN_EPOCHS, STAGE):
         test_transform = get_transforms(train=False)
 
-        if stage == 'train':
+        if stage in ['warmup', 'train']:
+            mixer = BitMix(gamma=0.25)
             train_transform = get_transforms(train=True)
         else:
+            mixer = EmptyMix()
             train_transform = get_transforms(train=False)
 
         train_dataset = AlaskaDataset(folds_data, train_folds,
                                       transform=train_transform,
-                                      mixer=EmptyMix())
+                                      mixer=mixer)
         val_dataset = AlaskaDataset(folds_data, val_folds, transform=test_transform)
         val_sampler = AlaskaSampler(val_dataset, train=False)
 
@@ -165,7 +167,7 @@ def train_fold(save_dir, train_folds, val_folds,
         if stage == 'train':
             callbacks += [
                 CosineAnnealingLR(T_max=epochs,
-                                  eta_min=get_lr(3e-6, WORLD_BATCH_SIZE))
+                                  eta_min=get_lr(1e-5, WORLD_BATCH_SIZE))
             ]
         elif stage == 'warmup':
             warmup_iterations = epochs * (len(train_sampler) / WORLD_BATCH_SIZE)
