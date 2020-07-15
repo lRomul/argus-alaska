@@ -116,8 +116,9 @@ def train_fold(save_dir, train_folds, val_folds,
 
     if distributed:
         model.nn_module = SyncBatchNorm.convert_sync_batchnorm(model.nn_module)
-        model.nn_module = DistributedDataParallel(model.nn_module,
-                                                  device_ids=[local_rank])
+        model.nn_module = DistributedDataParallel(model.nn_module.to(local_rank),
+                                                  device_ids=[local_rank],
+                                                  output_device=local_rank)
         if local_rank:
             model.logger.disabled = True
     else:
