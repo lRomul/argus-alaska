@@ -29,7 +29,7 @@ from src.utils import (
     get_best_model_path, load_pretrain_weigths
 )
 from src.ema import EmaMonitorCheckpoint
-from src.mixers import EmptyMix, BitMix
+from src.mixers import EmptyMix
 from src import config
 
 torch.backends.cudnn.benchmark = True
@@ -51,9 +51,9 @@ if args.distributed:
                                          init_method='env://')
 
 FOLD = 0
-BATCH_SIZE = 30
-VAL_BATCH_SIZE = 40
-ITER_SIZE = 3
+BATCH_SIZE = 24
+VAL_BATCH_SIZE = 64
+ITER_SIZE = 2
 TRAIN_EPOCHS = [3, 60, 10]
 STAGE = ['warmup', 'train', 'cooldown']
 BASE_LR = 1e-4
@@ -133,15 +133,13 @@ def train_fold(save_dir, train_folds, val_folds,
         test_transform = get_transforms(train=False)
 
         if stage in ['warmup', 'train']:
-            mixer = BitMix(gamma=0.25)
             train_transform = get_transforms(train=True)
         else:
-            mixer = EmptyMix()
             train_transform = get_transforms(train=False)
 
         train_dataset = AlaskaDataset(folds_data, train_folds,
                                       transform=train_transform,
-                                      mixer=mixer)
+                                      mixer=EmptyMix())
         val_dataset = AlaskaDataset(folds_data, val_folds, transform=test_transform)
         val_sampler = AlaskaSampler(val_dataset, train=False)
 
