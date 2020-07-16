@@ -56,7 +56,7 @@ VAL_BATCH_SIZE = 64
 ITER_SIZE = 2
 TRAIN_EPOCHS = [3, 60, 10]
 STAGE = ['warmup', 'train', 'cooldown']
-BASE_LR = 1e-4
+BASE_LR = 6e-5
 NUM_WORKERS = 4
 USE_AMP = True
 USE_EMA = True
@@ -166,7 +166,7 @@ def train_fold(save_dir, train_folds, val_folds,
         if stage == 'train':
             callbacks += [
                 CosineAnnealingLR(T_max=epochs,
-                                  eta_min=get_lr(1e-5, WORLD_BATCH_SIZE))
+                                  eta_min=get_lr(3e-6, WORLD_BATCH_SIZE))
             ]
         elif stage == 'warmup':
             warmup_iterations = epochs * (len(train_sampler) / BATCH_SIZE)
