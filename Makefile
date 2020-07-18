@@ -37,7 +37,7 @@ run-train:
 		-v $(shell pwd):/workdir \
 		--name=$(NAME) \
 		$(NAME) \
-		./distributed_train.sh 4 --experiment oneflip32_b5_001_after_004 --pretrain oneflip32_b5_001
+		./distributed_train.sh 4 --experiment oneflip32_b5_001_after_004 --pretrain oneflip32_b5_001_after_003
 
 attach:
 	docker attach $(NAME)
