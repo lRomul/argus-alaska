@@ -51,7 +51,7 @@ if args.distributed:
                                          init_method='env://')
 
 FOLD = 0
-BATCH_SIZE = 16
+BATCH_SIZE = 18
 VAL_BATCH_SIZE = 32
 ITER_SIZE = 2
 TRAIN_EPOCHS = [3, 60, 10]
