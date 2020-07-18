@@ -101,5 +101,8 @@ class WeightedAuc(Metric):
     def compute(self):
         y_true = np.concatenate(self.targets, axis=0)
         y_pred = np.concatenate(self.predictions, axis=0)
-        score = alaska_weighted_auc(y_true, y_pred)
+        try:
+            score = alaska_weighted_auc(y_true, y_pred)
+        except:
+            score = 0
         return score

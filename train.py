@@ -89,7 +89,8 @@ PARAMS = {
         'ohem_rate': 1.0
     }),
     'optimizer': ('AdamW', {
-        'lr': get_lr(BASE_LR, WORLD_BATCH_SIZE)
+        'lr': get_lr(BASE_LR, WORLD_BATCH_SIZE),
+        'eps': 1e-04
     }),
     'device': DEVICES[0],
     'iter_size': ITER_SIZE
