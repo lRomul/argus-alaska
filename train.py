@@ -29,7 +29,7 @@ from src.utils import (
     get_best_model_path, load_pretrain_weigths
 )
 from src.ema import EmaMonitorCheckpoint
-from src.mixers import BitMix, EmptyMix, RandomMixer
+from src.mixers import EmptyMix
 from src import config
 
 torch.backends.cudnn.benchmark = True
@@ -51,14 +51,14 @@ if args.distributed:
                                          init_method='env://')
 
 FOLD = 0
-BATCH_SIZE = 18
+BATCH_SIZE = 36
 VAL_BATCH_SIZE = 32
-ITER_SIZE = 2
-TRAIN_EPOCHS = [3, 60, 10]
+ITER_SIZE = 3
+TRAIN_EPOCHS = [3, 40, 10]
 STAGE = ['warmup', 'train', 'cooldown']
 BASE_LR = 4.5e-05
-NUM_WORKERS = 2
-USE_AMP = False
+NUM_WORKERS = 4
+USE_AMP = True
 USE_EMA = True
 DEVICES = ['cuda']
 
@@ -133,16 +133,14 @@ def train_fold(save_dir, train_folds, val_folds,
     for epochs, stage in zip(TRAIN_EPOCHS, STAGE):
         test_transform = get_transforms(train=False)
 
-        if stage == 'train':
-            mixer = RandomMixer([BitMix(gamma=0.25), EmptyMix()], p=[0., 1.])
+        if stage in ['warmup', 'train']:
             train_transform = get_transforms(train=True)
         else:
-            mixer = EmptyMix()
             train_transform = get_transforms(train=False)
 
         train_dataset = AlaskaDataset(folds_data, train_folds,
                                       transform=train_transform,
-                                      mixer=mixer)
+                                      mixer=EmptyMix())
         val_dataset = AlaskaDataset(folds_data, val_folds, transform=test_transform)
         val_sampler = AlaskaSampler(val_dataset, train=False)
 
@@ -176,14 +174,6 @@ def train_fold(save_dir, train_folds, val_folds,
                 LambdaLR(lambda x: x / warmup_iterations,
                          step_on_iteration=True)
             ]
-
-        if stage == 'train':
-            @argus.callbacks.on_epoch_start
-            def schedule_mixer_prob(state):
-                bitmix_prob = state.epoch / epochs
-                mixer.p = [bitmix_prob, 1 - bitmix_prob]
-                state.logger.info(f"Mixer probabilities {mixer.p}")
-            callbacks += [schedule_mixer_prob]
 
         if distributed:
             @argus.callbacks.on_epoch_complete
