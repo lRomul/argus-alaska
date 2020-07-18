@@ -29,7 +29,7 @@ from src.utils import (
     get_best_model_path, load_pretrain_weigths
 )
 from src.ema import EmaMonitorCheckpoint
-from src.mixers import EmptyMix
+from src.mixers import BitMix, EmptyMix, RandomMixer
 from src import config
 
 torch.backends.cudnn.benchmark = True
@@ -51,13 +51,13 @@ if args.distributed:
                                          init_method='env://')
 
 FOLD = 0
-BATCH_SIZE = 24
+BATCH_SIZE = 20
 VAL_BATCH_SIZE = 64
-ITER_SIZE = 2
+ITER_SIZE = 1
 TRAIN_EPOCHS = [3, 60, 10]
 STAGE = ['warmup', 'train', 'cooldown']
-BASE_LR = 6e-5
-NUM_WORKERS = 4
+BASE_LR = 4.5e-05
+NUM_WORKERS = 2
 USE_AMP = True
 USE_EMA = True
 DEVICES = ['cuda']
@@ -133,14 +133,16 @@ def train_fold(save_dir, train_folds, val_folds,
     for epochs, stage in zip(TRAIN_EPOCHS, STAGE):
         test_transform = get_transforms(train=False)
 
-        if stage in ['warmup', 'train']:
+        if stage == 'train':
+            mixer = RandomMixer([BitMix(gamma=0.25), EmptyMix()], p=[0., 1.])
             train_transform = get_transforms(train=True)
         else:
+            mixer = EmptyMix()
             train_transform = get_transforms(train=False)
 
         train_dataset = AlaskaDataset(folds_data, train_folds,
                                       transform=train_transform,
-                                      mixer=EmptyMix())
+                                      mixer=mixer)
         val_dataset = AlaskaDataset(folds_data, val_folds, transform=test_transform)
         val_sampler = AlaskaSampler(val_dataset, train=False)
 
@@ -157,7 +159,7 @@ def train_fold(save_dir, train_folds, val_folds,
         callbacks = []
         if local_rank == 0:
             callbacks += [
-                checkpoint(save_dir, monitor='val_weighted_auc', max_saves=10,
+                checkpoint(save_dir, monitor='val_weighted_auc', max_saves=5,
                            file_format=stage + '-model-{epoch:03d}-{monitor:.6f}.pth'),
                 LoggingToFile(save_dir / 'log.txt'),
                 LoggingToCSV(save_dir / 'log.csv', append=True)
@@ -166,7 +168,7 @@ def train_fold(save_dir, train_folds, val_folds,
         if stage == 'train':
             callbacks += [
                 CosineAnnealingLR(T_max=epochs,
-                                  eta_min=get_lr(3e-6, WORLD_BATCH_SIZE))
+                                  eta_min=get_lr(9e-6, WORLD_BATCH_SIZE))
             ]
         elif stage == 'warmup':
             warmup_iterations = epochs * (len(train_sampler) / BATCH_SIZE)
@@ -174,6 +176,14 @@ def train_fold(save_dir, train_folds, val_folds,
                 LambdaLR(lambda x: x / warmup_iterations,
                          step_on_iteration=True)
             ]
+
+        if stage == 'train':
+            @argus.callbacks.on_epoch_start
+            def schedule_mixer_prob(state):
+                bitmix_prob = state.epoch / epochs
+                mixer.p = [bitmix_prob, 1 - bitmix_prob]
+                state.logger.info(f"Mixer probabilities {mixer.p}")
+            callbacks += [schedule_mixer_prob]
 
         if distributed:
             @argus.callbacks.on_epoch_complete

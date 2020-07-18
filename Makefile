@@ -7,9 +7,9 @@ else
 	GPUS_OPTION=--gpus=$(GPUS)
 endif
 
-.PHONY: all build stop run attach logs exec
+.PHONY: all build stop run attach logs exec run-train
 
-all: stop build run
+all: stop build run-train logs
 
 build:
 	docker build -t $(NAME) .
@@ -28,6 +28,16 @@ run:
 		$(NAME) \
 		bash
 	docker attach $(NAME)
+
+run-train:
+	docker run --rm -dit \
+		$(GPUS_OPTION) \
+		--net=host \
+		--ipc=host \
+		-v $(shell pwd):/workdir \
+		--name=$(NAME) \
+		$(NAME) \
+		./distributed_train.sh 8 --experiment oneflip32_b5_001_bitmix_003 --pretrain oneflip32_b5_001
 
 attach:
 	docker attach $(NAME)
