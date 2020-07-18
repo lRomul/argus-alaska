@@ -52,13 +52,13 @@ if args.distributed:
 
 FOLD = 0
 BATCH_SIZE = 16
-VAL_BATCH_SIZE = 64
-ITER_SIZE = 1
+VAL_BATCH_SIZE = 32
+ITER_SIZE = 2
 TRAIN_EPOCHS = [3, 60, 10]
 STAGE = ['warmup', 'train', 'cooldown']
 BASE_LR = 4.5e-05
 NUM_WORKERS = 2
-USE_AMP = True
+USE_AMP = False
 USE_EMA = True
 DEVICES = ['cuda']
 
@@ -89,8 +89,7 @@ PARAMS = {
         'ohem_rate': 1.0
     }),
     'optimizer': ('AdamW', {
-        'lr': get_lr(BASE_LR, WORLD_BATCH_SIZE),
-        'eps': 1e-04
+        'lr': get_lr(BASE_LR, WORLD_BATCH_SIZE)
     }),
     'device': DEVICES[0],
     'iter_size': ITER_SIZE
