@@ -101,9 +101,6 @@ class EmaMonitorCheckpoint(MonitorCheckpoint):
 
             file_path = self._format_file_path(state)
             self.save(file_path, state)
-            if self.copy_last:
-                last_model_path = os.path.join(self.dir_path, 'model-last.pth')
-                shutil.copy(file_path, last_model_path)
             self.saved_files_paths.append(file_path)
 
             if self.max_saves is not None:
