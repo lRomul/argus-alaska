@@ -40,9 +40,8 @@ RUN pip3 install --no-cache-dir \
 
 RUN pip install --no-cache-dir \
     timm==0.1.26 \
-    Cython==0.29.17
-
-RUN pip install -U git+https://github.com/lRomul/argus.git@custom_build
+    Cython==0.29.17 \
+    pytorch-argus==0.1.1
 
 RUN git clone -b master https://github.com/dwgoon/jpegio &&\
     cd jpegio &&\

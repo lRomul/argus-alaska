@@ -39,6 +39,12 @@ The provided dockerfile is supplied to build image with cuda support and cudnn.
 make
 ```
 
+* Create folds split and extract quality of images 
+```bash
+python make_folds.py
+python make_quality_json.py
+```
+
 * Train model
 ```bash
 python train.py --experiment train_001

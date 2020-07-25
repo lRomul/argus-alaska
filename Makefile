@@ -9,7 +9,7 @@ endif
 
 .PHONY: all build stop run attach logs exec run-train
 
-all: stop build run-train logs
+all: stop build run logs
 
 build:
 	docker build -t $(NAME) .

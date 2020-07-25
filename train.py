@@ -195,7 +195,7 @@ def train_fold(save_dir, train_folds, val_folds,
 
         model.fit(train_loader,
                   val_loader=val_loader,
-                  max_epochs=epochs,
+                  num_epochs=epochs,
                   callbacks=callbacks,
                   metrics=metrics)
 

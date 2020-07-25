@@ -73,7 +73,7 @@ class AlaskaModel(Model):
     def val_step(self, batch, state) -> dict:
         self.eval()
         with torch.no_grad():
-            input, target = self.prepare_batch(batch, self.device)
+            input, target = deep_to(batch, self.device, non_blocking=True)
             if self.model_ema is None:
                 prediction = self.nn_module(input)
             else:
