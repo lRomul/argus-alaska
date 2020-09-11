@@ -1,0 +1,15 @@
+numpy==1.18.4
+torch==1.5.1
+torchvision==0.6.0
+opencv-python==4.2.0.34
+scipy==1.4.1
+matplotlib==3.2.1
+pandas==1.0.3
+notebook==6.0.3
+scikit-learn==0.22.2.post1
+scikit-image==0.16.2
+albumentations==0.4.5
+adamp==0.2.0
+timm==0.1.26
+Cython==0.29.17
+pytorch-argus==0.1.2
