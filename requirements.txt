@@ -5,7 +5,7 @@ opencv-python==4.2.0.34
 scipy==1.4.1
 matplotlib==3.2.1
 pandas==1.0.3
-notebook==6.1.5
+notebook==6.4.10
 scikit-learn==0.22.2.post1
 scikit-image==0.16.2
 albumentations==0.4.5
